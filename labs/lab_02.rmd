@@ -61,7 +61,7 @@ only_new_voters %>%
 **Q2** A better question is whether the new voters you found in Q1 are an outlier compared to other weeks this year. Using the original dataframe with 2024 registrants, use `mutate()` and lubridate to produce week numbers from the COUNTY_REGISTRATION_DATE (Lubridate has a function that turns a date into a week number. Use that to answer this question). Save that to the original dataframe. Then calculate how many voters are in each week. Describe the distribution of voters groups in a sentence - are the weeks from July 21-August 7 different from the rest, and if so, how?
 
 **A2**
-July 21-Aug 7 were different from the rest because weeks 30 and 31 (July 21-Aug 3) had a really high number of registrations (breaking 7000 both weeks). Week 24 earlier in the summer had the highest number of registrations, though. I looked it up and all I could find was Hunter Biden being convicted -- not sure why that had such a high number of registrations. 
+July 21-Aug 7 were different from the rest because weeks 30 and 31 (July 21-Aug 3) had a really high number of registrations (breaking 7000 both weeks). Week 24 earlier in the summer had the highest number of registrations, though. I looked it up and all I could find was Hunter Biden being convicted -- not sure why that week had such a high number of registrations. 
 
 ```{r}
 library(lubridate)
@@ -116,7 +116,7 @@ md_voters_2024 %>%
 **Q4** Maryland has, officially, five regions: https://www.visitmaryland.org/article/maryland-regions. Modify the original dataframe again to add a `region` column based on the `COUNTY` value using case_when. Are you going to have to do this for every Maryland county plus Baltimore City? Yes, you are. Which regions and parties account for the most new voters?
 
 **A4** 
-Now, they won't give me the name of the region when I group by and summarize. So I'm gonna assume it's in alphabetical order until I figure out how to fix it. That would mean that Central MD had the most new voters. Also wouldn't label the data when I tried to figure out party registration. I am going to take the L on this. 
+Now, they won't give me the name of the region when I group by and summarize. So if I assume it's in alphabetical order, central MD had the most new voters. Also wouldn't label the data when I tried to figure out party registration. I am going to take the L on this. 
 I talked to chatgpt for help with case_when and commented our conversation below. 
 
 ```{r}
