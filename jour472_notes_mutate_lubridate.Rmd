@@ -1,0 +1,60 @@
+learning how to mutate 
+
+```{r}
+primary_24 %>% 
+  mutate(new_column = votes - election_day) 
+#using columns instead of rows! votes and election_day are both columns, and when we do this it adds a new column with this data for allll the candidates
+#give your new column a good name 
+#you can use this to do percentages! 
+mutate(percent = (percent equation)) makes a new column 
+#you can still group by and summarize after mutating!
+#you can use mutate to make things all caps: str_to_upper(column), str_to_lower(column), str_to_title(column)
+```
+
+time for case_when 
+used to classify 
+
+```{r}
+mutate(
+  amount_category = case_when (
+    amount < 100 ~ "less than $100", 
+    amount >= & amount < 500 ~ "between $100 and $499", 
+    amount >= 3000 ~ "$3000 or more "
+  )
+)
+#"amount" here is a column name 
+```
+
+filter()
+
+```{r}
+maryland_winred_contributions %>% 
+  filter(amount_category == "less than $100")
+#now we have a dataset with just the less than 100 rows 
+#and we can add stuff
+maryland_winred_contributions %>% 
+  filter(amount_category == "less than $100")
+group_by(last_name, first_name) %>% 
+  summarise(total_given = sum(amount))
+blah blah etc etc 
+
+```
+if it's in a column, you can filter for it 
+remember to use == in filter 
+you can filter for multiple things: & is and and | is or 
+
+lubridate to change dates from <chr> to <date>
+
+```{r}
+library(lubridate)
+
+maryland_expenses %>% 
+  select(expenditure_date) %>% 
+  mutate (new_expenditure_date = mdy(expenditure_date))
+#match to what the og data was -- mdy is if the og data comes in m/d/yy format. dmy and ymd are also things. 
+```
+
+
+
+
+

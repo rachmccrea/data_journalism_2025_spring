@@ -114,9 +114,10 @@ If I did the coding right, Angela D Mason has prosecuted the most cases against 
 
 ```{r}
 court_charges %>% 
-  group_by(defendant, judge) %>% 
+  group_by(defendant, prosecutor) %>% 
   summarise(number_of_cases = n_distinct(case_number)) %>% 
   arrange(desc(number_of_cases))
+#i fucked it up during review but i can't figure out how
 
 ```
 
