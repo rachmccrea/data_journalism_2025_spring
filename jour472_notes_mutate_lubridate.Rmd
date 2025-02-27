@@ -55,6 +55,68 @@ maryland_expenses %>%
 ```
 
 
+When you do summarize(), make sure you're making a new column. 
+group_by(column_name) %>% 
+summarize(whatever_the_fuck = n())
+
+
+"yeah welcome to my hell"
+
+select(column_a, column_b) to display just those columns 
+
+```{r}
+%in%
+```
+```{r}
+md_voters_2024 %>% 
+ mutate(
+   region = case_when(
+     COUNTY %in% c("one", "two", "three",) ~ "Capital Region"
+   )
+# %in% c() makes a list!
+
+
+TRUE ~ "other region"
+# this is saying: for things other than what we listed, call it "region" 
+```
+
+cleaning data using case_when
+```{r}
+md_voters_2024 %>% 
+  mutate(
+    county = case_when(
+      county == "Saint Mary's" ~ "St. Mary's", 
+      TRUE ~ COUNTY 
+    )
+  )
+#used to change the spelling of St Marys 
+```
+
+janitor: clean_names
+```{r}
+md_voters_2024 %>% 
+  clean_names()
+
+#you absolutely should use it all the time
+#import data, then clean names 
+```
+
+check for problems 
+problems(data_set_name)
+
+rename(newname = oldname)
+
+mutate(amount = as.numeric(amount))
+#changes to a number
+
+get_dupes() 
+#finds duplicates
+
+mutate(zip = str_sub(zip, start=1L, end=5L))
+
+mutate(city = str_to_title(city))
+
+
 
 
 
