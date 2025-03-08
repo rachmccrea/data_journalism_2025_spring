@@ -1,0 +1,176 @@
+---
+title: "lab_04"
+author: "Derek Willis"
+date: "2024-09-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## About this lab
+
+To complete this lab, you need to: \* run existing code as directed (look for **Task**). \* modify existing code as directed (look for **Task**). \* write code in empty codeblocks provided to answer questions included (look for **Q**). \* write out the answer in the form of a complete sentence in the space given (look for **A**).
+
+When you are finished, commit changes and push to your personal GitHub repo, then submit the URL to this document on ELMS.
+
+## Load libraries and establish settings
+
+You'll need to load three packages for this: the tidyverse, lubridate and janitor.
+
+**Task** load these three packages.
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load the tidyverse. If you have not installed the tidyverse already, remove the # from the next line and run it first.  
+# install.packages('tidyverse')
+library(tidyverse)
+library(janitor)
+library(lubridate)
+
+```
+
+For this lab, we want to investigate spending by the two leading Senate candidates in Maryland during this election, Angela Alsobrooks and Larry Hogan. Our goal is to try and standardize the purpose of the expenditures so that we can compare the two campaigns. We have the data, but it's messy - purpose descriptions are spelled differently and capitalized differently - and we need to clean it up. We'll use a combination of RStudio and OpenRefine to do that.
+
+The basic process here is to start in RStudio, export data so that we can use OpenRefine to clean it up, and then bring it back into RStudio to finish our analysis.
+
+## Load Data
+
+You'll need to load one data set, a CSV file of campaign expenditures located in the data folder called "md_senate_expenses.csv"
+
+**Task** Create a codeblock below, then read the data in and assign it to an appropriate variable name. You'll want to make sure that any date columns are actually date datatypes.
+
+```{r}
+# Load the Maryland expenditures data table
+expenses <- read_csv("C:/Users/rachm/Desktop/github bullshit/data_journalism_2025_spring/labs/data/md_senate_expenses.csv")
+```
+
+## Answer questions
+
+**Q1.** You've been assigned to compare the spending priorities of the two campaigns, but they describe their spending differently using the `purpose` column. Using OpenRefine, create a project using the original CSV file, make a copy of the `purpose` column called `purpose_clean` and then standardize it, focusing on the purposes that appear most often or have the largest total amounts. You can transform the data as you want - making all records the same case, for example, to help. The goal is to be able to group together as many similar purpose values, so you can choose to call all transportation-related expenses the same thing.
+
+How do you know when you're done? It's a judgment call, but you should be close to 100 unique values for `purpose_clean`, and maybe even below that number.
+
+Then, when you are done standardizing `purpose_clean`, export it as a new CSV file to your data folder, *giving it a different name* and read it back into RStudio as a new dataframe.
+
+Then, using that `purpose_clean` column, write code to find the largest amounts of spending on categories by both campaigns.
+
+**A1.**
+
+```{r}
+#I INCLUDED LODGING IN TRAVEL
+#Not sure I did the cleaning right, but I was able to include 591 rows under "TRAVEL" in purpose_clean
+cleaned_expenses <- read_csv("C:/Users/rachm/Desktop/github bullshit/data_journalism_2025_spring/labs/data/cleaned_md_senate_expenses.csv")
+```
+```{r}
+travel_expenses <- cleaned_expenses %>% 
+  filter(purpose_clean == "TRAVEL")
+```
+```{r}
+travel_expenses %>% 
+  group_by(candidate) %>% 
+  summarize(amount_travel = sum(amount))
+```
+Looks like Alsobrooks spent $78,112.26 on travel and Hogan spent $56,952.94 on travel.
+
+
+
+**Q2.** Let's do some research on the top purposes from A1. Feel free to search the Web to understand those terms better if need be, and then write a description comparing and contrasting the two campaigns' largest categories of spending.
+
+
+**A2.**
+```{r}
+alsobrooks_travel <- travel_expenses %>% 
+  filter(candidate == "Alsobrooks")
+```
+```{r}
+alsobrooks_travel %>% 
+  group_by(purpose) %>% 
+  summarize(top_reasons = sum(amount)) %>% 
+  arrange(desc(top_reasons))
+```
+```{r}
+hogan_travel <- travel_expenses %>% 
+  filter(candidate == "Hogan")
+```
+```{r}
+hogan_travel %>% 
+  group_by(purpose) %>% 
+  summarize(top_reasons = sum(amount)) %>% 
+  arrange(desc(top_reasons))
+```
+
+The top purposes for Alsobrooks by $ amount were travel stipends, air travel, and lodging. Travel stipends are money given to employees to cover travel costs, according to the internet. 
+The top purposes for Hogan by $ amount were "travel room expense," "travel flight expense," and "travel car expense", so lodging, flights, and cars (I assume those costs include gas and rental cars). Travel stipends aren't included, so maybe Hogan was doing all his own traveling instead of sending campaign employees around. 
+
+**Q3.** Pick one of the top categories for each campaign and write code that shows how that spending has changed over time, if at all. You'll need to use lubridate for this. Write a couple of sentences describing that pattern.
+
+**A3.**
+
+```{r}
+alsobrooks_travel %>% mutate(date=ymd(date))
+hogan_travel %>% mutate(date=ymd(date))
+#using what we did for lab 2
+alsobrooks_air_travel <- alsobrooks_travel %>% 
+  filter(purpose == "Air Travel") %>% 
+  mutate(week_number = week(date))
+
+alsobrooks_air_travel %>% 
+  group_by(week_number) %>% 
+  summarize(n()) %>% 
+  arrange(desc(week_number))
+```
+```{r}
+hogan_air_travel <- hogan_travel %>% 
+  filter(purpose == "TRAVEL FLIGHT EXPENSE") %>% 
+  mutate(week_number = week(date))
+
+hogan_air_travel %>% 
+  group_by(week_number) %>% 
+  summarize(n()) %>% 
+  arrange(desc(week_number))
+```
+
+For Alsobrooks, there was more air travel in the second half of the year (especially a couple weeks over the summer) than the first half of the year. There was still a fair amount of air travel after the election in November. Hogan had most of his flights in the springtime. 
+
+
+**Q4.** Which committee has the larger payroll or salary spending so far? How many unique recipients of payroll/staff spending are there for each candidate?
+
+**A4.**
+
+```{r}
+alsobrooks_salary <- cleaned_expenses %>% 
+  filter(candidate == "Alsobrooks") %>% 
+  filter(purpose == "Salary")
+
+alsobrooks_salary %>% 
+  group_by(purpose) %>% 
+  summarize(salary_total = sum(amount))
+```
+```{r}
+hogan_staffing <- cleaned_expenses %>% 
+  filter(candidate == "Hogan") %>% 
+  filter(purpose == "STAFFING - SEE MEMO")
+hogan_staffing %>% 
+  group_by(purpose) %>% 
+  summarize(salary_total = sum(amount))
+hogan_staff_services <- cleaned_expenses %>% 
+  filter(candidate == "Hogan") %>% 
+  filter(purpose == "STAFFING SERVICES")
+hogan_staff_services %>% 
+  group_by(purpose) %>% 
+  summarize(salary_total = sum(amount))
+  
+ #285672.8 + 195436.7 = 481,109.5
+```
+
+
+Alsobrooks spent $822,015 on salary and Hogan spent $481,109.5 on staffing -- but I'm not sure I did Hogan's right. 
+
+**Q5** What's the most interesting story idea you've found in this data?
+
+**A5**
+If I did the coding right for staffing and salary, the difference in money spent on salary/payroll would probably be the most interesting story. I think it's also interesting that Hogan's team's #1 travel expense was lodging, but that was Alsobrooks' #3. Maybe they were staying in different kinds of hotels. 
