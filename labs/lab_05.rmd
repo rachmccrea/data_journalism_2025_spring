@@ -1,0 +1,159 @@
+---
+title: "lab_05"
+author: "derek willis"
+date: "2024-09-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries and establish settings
+
+```{r}
+# load the tidyverse
+library(tidyverse)
+```
+
+## Getting Started
+
+This week we'll be combining and joining data to make it more useful and to ask some questions about it. This week, we'll revisit our new Maryland voters data and try to join it with contributions to the Harris campaign from Maryland donors made via ActBlue. Can we find new voters who are not registered Democrats who gave to Harris after she became a presidential candidate on July 21? What, if anything, can we say about those people?
+
+We'll be doing something similar to what Ence Morse did for [this Washington Post story](https://www.washingtonpost.com/politics/2024/09/24/kamala-harris-younger-donors/?pwapi_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyZWFzb24iOiJnaWZ0IiwibmJmIjoxNzI3MzIzMjAwLCJpc3MiOiJzdWJzY3JpcHRpb25zIiwiZXhwIjoxNzI4NzA1NTk5LCJpYXQiOjE3MjczMjMyMDAsImp0aSI6ImIwYWMxNTk4LWMwMDgtNDE5Ny04MjAyLWVmMWNjZWFmYWZiMiIsInVybCI6Imh0dHBzOi8vd3d3Lndhc2hpbmd0b25wb3N0LmNvbS9wb2xpdGljcy8yMDI0LzA5LzI0L2thbWFsYS1oYXJyaXMteW91bmdlci1kb25vcnMvIn0.3-s0tBkMV7Y9DD21CBsKMlaliGlOKT2egCO-UFT735Y), just on a smaller scale.
+
+First, load two CSV contribution files in the `data` folder, one each for donations made in July and August, and then combine them into a single dataframe.
+
+```{r}
+# load the Harris contribution data files and combine them
+harris_july <- read_csv("data/july_harris.csv")
+harris_august <- read_csv("data/august_harris.csv")
+
+harris_combined <- bind_rows(list(harris_july, harris_august))
+
+```
+
+Next, let's read in the new voters (people who registered in 2024):
+
+```{r}
+# load the new voters data
+new_voters <- read_csv("data/new_voters.csv")
+
+```
+
+Next join the Harris donations to the voter data. Remember, people's names are common, __so you'll want to use name columns and address information__. You'll need to figure out which columns to use from both dataframes. The new_voters data has both a single Address column and various parts of the address, such as HouseNumber. Make a plan for picking your join columns - try out some combinations - and save the results to a new dataframe.
+
+```{r}
+# join the combined Harris file to the new voters
+# you will need to determine what columns to use
+
+combined_joined <- harris_combined %>% 
+  inner_join(new_voters, join_by(
+    address_one == Address, 
+    last_name == LastName,
+    first_name == FirstName, 
+    city == ResidentialCity
+  ))
+
+#we did this together in class 
+
+```
+
+## Answer questions
+
+Q1. Explain why you used the columns you did to make the join, and why that result is better than other ways you tried. Are there any problems with the join you made, such as the possibility of false positives?
+
+
+A1. We actually were looking at these columns before we did the lab in class! Using both names and addresses makes sure that no people with the same name or the same address were confused with each other. It's specific enough. 
+
+Q2. Based on your join, how many donations to Harris have come from people who registered this year? How many unique people does that represent, and which donors have given the largest _number_ of donations since July 20? 
+
+A2. 
+326 donations to Harris came from people who registered this year. That's 238 individual people. Brandyn Best has given the largest number of donations since 7/20 -- he gave 5 times. 
+
+
+```{r}
+combined_joined %>% 
+  filter(CountyRegistrationDate >= mdy("01/01/2024")) %>% 
+  summarize(count = n())
+#326 donations
+
+combined_joined %>% 
+  group_by(address_one, first_name) %>% 
+  summarize(amount = n_distinct(address_one))
+#238 individual people 
+
+combined_joined %>% 
+  filter(CountyRegistrationDate >= mdy("07/20/2024")) %>% 
+  group_by(last_name, first_name) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+#brandyn best has given 5 individual donations
+```
+
+Q3. What are the party and gender breakdowns of those donors? How many donations has Harris gotten from non-Democrats?
+
+A3. 
+
+There were 173 women donors, 141 men, and 12 n/a. There were 294 democrats and 4 republican donors. 
+
+```{r}
+
+combined_joined %>% 
+  group_by(Gender) %>% 
+  summarize(count=n())
+#173 female, 141 male, 12 n/a 
+
+combined_joined %>% 
+  group_by(Party) %>% 
+  summarize(count=n())
+#294 dem, 2 lib, 1 nlm, 2 oth, 4 rep, 23 una
+  
+```
+
+Q4. Choose your own adventure: I want you to come up with a question you could ask of one of the dataframes we've created for this lab. It could involve just the new voters, or the donors or the joined dataframe, but it cannot be a variation of a previous question (so, for example, you can't ask, "How many Republicans have given to Harris"). First write the question and then try to answer it by writing code. If you're not sure of the exact code, try googling (or ask me for advice) but, at a minimum, describe what you think you'd have to do to answer it and what the results would look like. That can help.
+
+A4:
+
+I'd like to look at the occupation and employer data. How many new voters worked at the University of Maryland? How many of them donated to Harris? 
+
+```{r}
+
+umd_combined_joined <- combined_joined %>% 
+  filter(employer == "UNIVERSITY OF MARYLAND")
+  
+umd_combined_joined_total <- combined_joined %>% 
+  filter(employer == "UNIVERSITY OF MARYLAND") %>% 
+  group_by(employer) %>% 
+  summarize(amount = sum(amount))
+
+#there were 4 UMD employees who donated to Harris. They donated a total of $250.
+```
+Now I want to see how many donations are from unemployed people -- seeing a lot of "NOT EMPLOYED"
+
+```{r}
+unemployed <- combined_joined %>% 
+  filter(employer == "NOT EMPLOYED")
+  
+unemployed_total <- combined_joined %>% 
+  filter(employer == "NOT EMPLOYED") %>% 
+  group_by(employer) %>% 
+  summarize(amount = sum(amount))
+
+#98 donations from unemployed people totaling $5791.38
+
+```
+now I just want to see the occupation breakdown 
+
+```{r}
+combined_joined %>% 
+  group_by(occupation) %>% 
+  summarize(count=n()) %>%
+  arrange(desc(count))
+#"Not Employed" was the most common occupation by FAR
+
+```
+
+
+
+

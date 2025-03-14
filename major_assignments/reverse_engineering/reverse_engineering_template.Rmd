@@ -25,7 +25,12 @@ In this notebook, we are reverse engineering the story, [STORY NAME](STORY URL)
 Loading required libraries for this analysis.
 
 ```{r echo=FALSE, message=FALSE}
-
+library(tidyverse)
+library(lubridate)
+options(scipen=999)
+library(refinr)
+library(janitor)
+library(dplyr)
 ```
 
 ## Load and Cleaning Data
@@ -34,10 +39,34 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 ```{r}
 # Load required data
+donors <- read_csv("data/donors.csv")
+
+donors <- donors %>% 
+  mutate(
+    amount = str_remove_all(amount, "\\$"),
+    amount = str_remove_all(amount,",")
+  )
+glimpse(donors)
+
+donors <- donors %>% 
+  mutate(date = mdy(date)) %>% 
+  mutate(amount = as.numeric(amount)) %>% 
+  mutate(zip = str_sub(zip, start = 1L, end = 5L)) %>% 
+  mutate(committee_zip = str_sub(committee_zip, start = 1L, end = 5L))
+
+glimpse(donors)
+
+donors <- donors %>% 
+  rename(
+    name_clean = "name-clean"
+  )
+glimpse(donors)
 
 # Path to data should be loaded from folder "data" i.e. read_csv("data/name_of_data.csv")
 
+
 # Clean required data and prepare for analysis if needed. 
+
 
 
 ```
@@ -47,11 +76,44 @@ In this notebook, we are reverse engineering five sentences from the story.
 
 ### Sentence 1
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Sentence text**: “Add in the week before session began, and the two businessmen gave more than $87,000 to Republican legislators and the North Carolina Republican Party, a key cog in the campaign machine this year as the two major parties fight for control of the General Assembly in November's elections.”
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
 # Put code to reverse engineer sentence here
+
+#week before session is jan 3-9
+donors %>% 
+  filter(name_clean == "GEORGE LEWIS STROBEL II" | name_clean == "ROBIN E DELMER") %>% 
+  group_by(name_clean) %>% 
+  summarise(amount = sum(amount)) %>% 
+  arrange(desc(amount))
+
+61250+57250
+  
+donors %>% 
+  filter(name_clean == "GEORGE LEWIS STROBEL II" | name_clean == "ROBIN E DELMER") %>% 
+  group_by(committee_name) %>% 
+  summarise(amount = sum(amount)) %>% 
+  arrange(desc(amount))
+#rabon = dem
+#michael lee = repub = 12500	
+#saine = repub = 12500	
+#hise = repub = 12500	
+#jackson = repub = 10000	
+#moore = repub = 10000	
+#brown = repub = 10000	
+#berger = repub = 10000	
+#nc rec = real estate commission = 6000
+#randleman = repub = 5000	
+#szoka = repub = 4000	
+#brawley = repub = 2500	
+#lewis = repub = 2500	 (later got in legal trouble for corruption lmao)
+#tillman = repub = 2500	
+#bell = repub = 2500	
+#burr = repub = 1000
+
+12500+12500+12500+10000+10000+10000+10000+5000+4000+2500+2500+2500+2500+1000 = 97500
 
 # Display results of code below this codeblock
 
