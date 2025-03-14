@@ -1,7 +1,7 @@
 ---
 title: "Reverse Engineering Project"
-author: "Student names here"
-date: "Date here"
+author: Rachel, Fiona, Brinkley, Yugo
+date: 3-12-25"
 output:
   html_document:
     theme: cerulean
@@ -91,29 +91,7 @@ donors %>%
 
 61250+57250
   
-donors %>% 
-  filter(name_clean == "GEORGE LEWIS STROBEL II" | name_clean == "ROBIN E DELMER") %>% 
-  group_by(committee_name) %>% 
-  summarise(amount = sum(amount)) %>% 
-  arrange(desc(amount))
-#rabon = dem
-#michael lee = repub = 12500	
-#saine = repub = 12500	
-#hise = repub = 12500	
-#jackson = repub = 10000	
-#moore = repub = 10000	
-#brown = repub = 10000	
-#berger = repub = 10000	
-#nc rec = real estate commission = 6000
-#randleman = repub = 5000	
-#szoka = repub = 4000	
-#brawley = repub = 2500	
-#lewis = repub = 2500	 (later got in legal trouble for corruption lmao)
-#tillman = repub = 2500	
-#bell = repub = 2500	
-#burr = repub = 1000
 
-12500+12500+12500+10000+10000+10000+10000+5000+4000+2500+2500+2500+2500+1000 = 97500
 
 # Display results of code below this codeblock
 
