@@ -77,7 +77,7 @@ In this notebook, we are reverse engineering five sentences from the story.
 ### Sentence 1
 
 * **Sentence text**: “Add in the week before session began, and the two businessmen gave more than $87,000 to Republican legislators and the North Carolina Republican Party, a key cog in the campaign machine this year as the two major parties fight for control of the General Assembly in November's elections.”
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Analysis summary**: We were able to confirm these findings. Once we filtered, grouped_by, and summarized, we were able to figure out what kinds of donations they were making and to who. 
 
 ```{r}
 # Put code to reverse engineer sentence here
@@ -90,30 +90,89 @@ donors %>%
   arrange(desc(amount))
 
 61250+57250
-  
+
+  donors %>% 
+  filter(name_clean == "GEORGE LEWIS STROBEL II" | name_clean == "ROBIN E DELMER") %>% 
+  group_by(committee_name) %>% 
+  summarise(amount = sum(amount)) %>% 
+  arrange(desc(amount))
+#rabon = dem
+#michael lee = repub = 12500	
+#saine = repub = 12500	
+#hise = repub = 12500	
+#jackson = repub = 10000	
+#moore = repub = 10000	
+#brown = repub = 10000	
+#berger = repub = 10000	
+#nc rec = real estate commission = 6000
+#randleman = repub = 5000	
+#szoka = repub = 4000	
+#brawley = repub = 2500	
+#lewis = repub = 2500	 (later got in legal trouble for corruption lmao)
+#tillman = repub = 2500	
+#bell = repub = 2500	
+#burr = repub = 1000
+
+12500+12500+12500+10000+10000+10000+10000+5000+4000+2500+2500+2500+2500+1000 = 97500
 # Display results of code below this codeblock
 
 ```
 
 ### Sentence 2
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: “Senate President Pro Tem Phil Berger's campaign alone raised nearly $222,000 during session. Twenty-three people gave him the maximum allowed: $5,200.”
+
+* **Analysis summary**: We were able to confirm the finding! When we filtered for Berger's campaign, the dates of the short session, and the amount given (5200), we got 23 rows. This number proves the sentence above that states 23 individual donors (organizations or people) donated the max amount allowed. 
 
 ```{r}
 # Put code to reverse engineer sentence here
 
+berger <- donors %>% 
+  filter(date >= '2018-05-16' & date <= '2018-06-29') %>% 
+  filter(committee_name == "PHILIP E BERGER COMM") %>% 
+  filter(amount == 5200) %>% 
+  group_by(name_clean, date, amount) %>% 
+  summarise(sum(amount))
+#https://www.sierraclub.org/north-carolina/blog/2018/07/legislature-2018-wrapup is where we got the ending date!
+
+
+
 # Display results of code below this codeblock
+
 
 ```
 
 ### Sentence 3
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: Beer distributors also gave during session. Mark Craig, the president of distributor R.H. Barringer, put more than $30,000 into state legislative campaigns during the six-week period, including the maximum $5,200 to Berger. He was the top individual donor to legislative campaigns during session.
+* **Analysis summary**: Yes, we were able to confirm these findings. There was a little confusion on the 6-week session for the second part,  but everything else went fine. 
 
 ```{r}
 # Put code to reverse engineer sentence here
+Mark_Craig <- donors|>
+  filter(date >= '2018-05-16' & date <= '2018-06-29') |>
+  filter(name_clean == "MARK R CRAIG")|>
+  filter(amount == 5200) |>
+  group_by(name_clean, date, amount) |>
+  summarize(sum(amount))
+
+#above proves max 5200 donation to Berger (run it one line at a time)
+
+donors %>% 
+  filter(name_clean == "MARK R CRAIG") %>% 
+  select(name_clean, date, amount) %>% 
+  arrange(date)
+
+#above proves most of his donations were during legislative session (not all, though!) 
+
+donors %>% 
+  filter(name_clean == "MARK R CRAIG") %>% 
+  group_by(name_clean) %>% 
+  summarize(
+    total_amount = sum(amount, na.rm = TRUE)
+  )
+#na.rm comes from chatgpt
+  
 
 # Display results of code below this codeblock
 
