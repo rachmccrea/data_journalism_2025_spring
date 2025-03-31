@@ -1,0 +1,324 @@
+---
+title: "lab_06"
+author: "derek willis"
+date: "2024-10-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+-   Tabula
+
+## Load libraries and establish settings
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+library(tidyverse)
+
+# Load the tidyverse and any other libraries you'll need
+
+```
+
+## Get Our PDF
+
+We'll be working with the [Maryland monthly voter registration update](https://elections.maryland.gov/pdf/vrar/2024_09.pdf) from the State Board of Elections. You'll want to download it to a place you'll remember (like your Downloads folder, or the labs folder in your repository). The goal is to write a couple of paragraphs that summarize the changes in voter registration in Maryland during the month of September.
+
+## Setup Tabula
+
+Start Tabula, then go to <http://127.0.0.1:8080/> in your browser. Click the "Browse" button and find the PDF file and click "open", and then click the "Import button" in Tabula. This will take a few seconds.
+
+This PDF has multiple possible tables to extract. We're going to make four dataframes: 
+
+* new registrations by party
+* removals by party
+* changes in registration
+* current registrations by county.
+
+You will need to draw boxes around four sections and export four CSV files that you will load into R. In Tabula, draw a box around the borders of those tables and click the "Preview & Export Extracted Data" button for each one. The export should look pretty clean, but might be missing some column headers. You'll need to include total columns.
+
+Export each CSV (each one should be called `tabula-2024-09.csv` by default, so you should rename them for clarity) to your lab_06/data folder.
+
+From there, you will need to read in and clean up the data, and in particular the headers. You can choose to include the headers from the PDF in your exported CSV files OR to exclude them and add them when importing. The pre_lab has an example of how to do this!
+
+## Load and clean up the data in R
+
+You will need to read in and clean up the data so that it can be used for analysis. By "clean" I mean the column headers must not contain spaces and they should have meaningful names, not "x1" or something similar. The current registrations dataframe *MUST* include the county name, but should not include the columns under `Changes` and `Party Affiliation From`. How you do that is up to you (and could involve something outside R), but you can use `select()` with or without the minus sign to include or exclude certain columns. You also can use the `rename` function to, well, rename columns.
+
+```{r}
+# Party registrations
+# new registrations by party
+
+x24_party_reg <- read_csv("data/real_party_reg.csv")
+#kept getting the error that they couldn't find function read_csv. asked chat, who told me to install and run the readr package. it was at this point that I realized I hadn't loaded the tidyverse. 
+x24_party_reg <- x24_party_reg %>% 
+  rename(type_of_reg = ...1)
+#asked the r help window for refresher on rename function 
+
+```
+
+```{r}
+# Removals
+
+x24_party_removals <- read_csv("data/party_removals.csv")
+#deleted 2 extra NA columns in excel and then loaded the data
+
+```
+
+```{r}
+# Changes
+
+#You will need to read in and clean up the data so that it can be used for analysis. By "clean" I mean the column headers must not contain spaces and they should have meaningful names, not "x1" or something similar. The current registrations dataframe *MUST* include the county name, but should not include the columns under `Changes` and `Party Affiliation From`. How you do that is up to you (and could involve something outside R), but you can use `select()` with or without the minus sign to include or exclude certain columns. You also can use the `rename` function to, well, rename columns.
+
+x24_voter_change <- read_csv("data/voter_change.csv")
+
+
+```
+
+```{r}
+# Current registrations
+
+x24_current_reg <- read_csv("data/current_reg.csv")
+#exported current reg as one csv and the column with the county names in another. put them together in excel and made other small changes, then loaded it in. 
+
+```
+
+## Rinse, Repeat: September 2022 data
+
+Do all of that again, for the [September 2022 voter registration update](https://elections.maryland.gov/pdf/vrar/2022_09.pdf), so we can compare the two. If you've done well, this is easy: just do the same steps in Tabula, export the files and use the same code to read in and clean up the data, *just remember to give these dataframes different names* so that you can compare September 2024 to September 2022.
+
+To answer the following questions, you'll need to calculate percentages and do other calculations. Whether you do that by combining or joining dataframes or you write code to run separately on both is up to you.
+
+```{r}
+# Party registrations
+
+x22_party_reg <- read_csv("data/new_reg_2022.csv")
+
+```
+
+```{r}
+# Removals
+
+x22_voter_rem <- read_csv("data/real_voter_rem_22.csv")
+
+```
+
+```{r}
+# Changes
+
+x22_voter_change <- read_csv("data/voter_change_22.csv")
+
+
+```
+
+```{r}
+# Current registrations
+
+x22_current_reg <- read_csv("data/x22_current_voter_reg.csv")
+
+```
+
+## Answer questions
+
+THIS IS A MESS. It's not because I don't care about the assignment! I'm just tired -- I've been up since 3am for work and my brain is dead. I did my best, but I think I did a lot of these questions wrong :( 
+Thank you for your help earlier today, I really appreciate it. 
+I used ChatGPT on a couple of these questions and flagged that in comments. 
+
+Q1. Calculate the percentage of registered Democrats, Republicans and unaffiliated voters for the entire state in September 2024 and September 2022, and then calculate the percentage change for those three party categories (the formula for percentage change is easy to remember: (New-Old)/Old). How would you describe the changes in these partisan categories in a story? What's the most interesting thing about these changes that would be the lede of that story?
+
+A1.
+
+HOW I'D DESCRIBE THIS FOR A STORY: 
+The percentage of both registered Democrats and Republicans fell between 2022 and 2024 while the number of unaffiliated voters rose by almost 8 percent. 
+
+```{r}
+#calculate percentage of registered Democrats, Republicans, and UNAF voters for 2024. 
+x24_current_MUTATED <- x24_current_reg %>% 
+ mutate(percentage_dem = DEM / 4231403 * 100, percentage_rep = REP / 4231403 * 100, percentage_unaf = UNAF / 4231403 * 100
+        )
+#chatgpt helped me figure this out, I asked how to find percentages for this situation and, among some other  stuff that wasn't super applicable, it gave me: mutate(percentage = n / total_voters * 100). I tried to modify that for this. 
+#THAT WORKED OMG!! I always forget about mutate. 
+
+x22_current_MUTATED <- x22_current_reg %>% 
+  mutate(percentage_dem = DEM / 4161637 * 100, percentage_rep = REP / 4161637 * 100, percentage_unaf = UNAF / 4161637 * 100)
+
+
+#calculating percentage change this way because numbers got weird when I tried to join these datasets -- percentages changed
+
+x22_pct_dem <- 54.08835514
+x22_pct_rep <- 24.0026941
+x22_pct_unaf <- 20.22216258
+
+x24_pct_dem <- 52.45109010
+x24_pct_rep <- 23.8531523
+x24_pct_unaf <- 21.83500366
+
+#(New-Old)/Old)
+
+pct_change_dem <- ((x24_pct_dem - x22_pct_dem) / x22_pct_dem)
+pct_change_rep <- ((x24_pct_rep - x22_pct_rep) / x22_pct_rep)
+pct_change_unaf <- ((x24_pct_unaf - x22_pct_unaf) / x22_pct_unaf)
+
+
+```
+
+Q2. Among the Maryland jurisdictions with the most registered voters, which one had the biggest percentage increase in unaffiliated voters between 2022 and 2024? How did that county vote for governor in 2022 and for president in 2020? Contrast the partisan percentages of that county with the county that had the eighth-largest percentage increase in unaffiliated voters. You should display information from the data that shows the counties with the largest percentage increase first.
+
+Prince George's County had the bigest % increase in unaffiliated voters during this time (over 15%). PG County went for Wes Moore in 2022's gubernatorial election and Harris in the 2024 presidential election, according to my quick google search. The one with the eighth largest percentage change was Frederick County, which also went for Moore in 2022 and Harris in 2024. I looked at the partisan percentages for PG and Frederick counties in 2022 and 2024. I think I might have messed up the dataset, but it's looking like PG has more Democrats and unaffiliated voters, and Frederick has more Republicans.
+
+A2.
+
+```{r}
+
+x22_current_MUTATED %>% 
+  group_by(COUNTY) %>% 
+  arrange(desc(TOTAL_COUNTY))
+
+#top 8: "MONTGOMERY", "PG", "BALTIMORE_COUNTY", "ANNE_ARUNDEL", "BALTIMORE_CITY", "HOWARD", "FREDERICK", "HARFORD"
+
+```
+```{r}
+  
+  
+x22_pct_unaf <- x22_current_reg %>% 
+  filter(COUNTY == "MONTGOMERY" | COUNTY == "PG" | COUNTY == "BALTIMORE_COUNTY" | COUNTY == "ANNE_ARUNDEL" | COUNTY == "BALTIMORE_CITY" |  COUNTY == "HOWARD" | COUNTY == "FREDERICK" |  COUNTY == "HARFORD") %>% 
+  group_by(COUNTY) %>%  
+  summarize(x22_county_percent_unaf = UNAF / TOTAL_COUNTY * 100) %>% 
+    arrange(desc(x22_county_percent_unaf))
+  
+#had to go into the excel for both years, change city/county row names, and run them again. 
+```
+```{r}
+x24_pct_unaf <- x24_current_reg %>% 
+   filter(COUNTY == "MONTGOMERY" | COUNTY == "PG" | COUNTY == "BALTIMORE_COUNTY" | COUNTY == "ANNE_ARUNDEL" | COUNTY == "BALTIMORE_CITY" |  COUNTY == "HOWARD" | COUNTY == "FREDERICK" |  COUNTY == "HARFORD") %>% 
+  group_by(COUNTY) %>%  
+  summarize(x24_county_percent_unaf = UNAF / TOTAL_COUNTY * 100) 
+  
+```
+```{r}
+pct_unaf_joined <- x22_pct_unaf %>%
+  left_join(x24_pct_unaf, join_by(COUNTY)) %>% 
+  mutate(pct_change = (x24_county_percent_unaf - x22_county_percent_unaf) / x22_county_percent_unaf)
+#it's giving me an error message now but it was working earlier and i have the dataset so i have no idea what happened there. 
+```
+```{r}
+x22_current_MUTATED %>% 
+  filter(COUNTY == "PG" | COUNTY == "FREDERICK")
+x24_current_MUTATED %>% 
+  filter(COUNTY == "PG" | COUNTY == "FREDERICK")
+```
+
+
+
+
+
+Q3. Do the party percentages of new registrants (% Dem, % Rep, % Unaffiliated) from September 2024 and September 2022 match the overall percentage of partisan registration in the state at those times?
+
+In other words, did new registrants mirror the overall partisan composition of the electorate, or were they different? Do any of the methods of registration vary significantly from the overall partisan pattern? Which method is worthy of further exploration?
+
+IN 2024, THERE WAS A LARGER % OF UNAFFILIATED VOTERS COMPARED TO REGISTERED VOTERS, AND SMALLER %S OF NEW DEMOCRATS AND REPUBLICANS COMPARED TO REGISTERED VOTERS. 
+SAME TREND IN 2022: HIGHER PERCENTAGE OF NEWLY REGISTERED UNAFFILIATED VOTERS AND SMALLER PERCENTAGES OF NEW DEMOCRATS AND REPUBLICANS. 
+I think it's definitely worth exploring why there are so many new unaffiliated voters. That's the big difference from the overall partisan pattern: more folks are registering as unaffiliated than the % of already-registered unaffiliated voters. 
+
+A3.
+
+```{r}
+
+#compare september current registration with new registration for both years
+#step 1 would be doing the same percentage thing but for new registration. 
+
+x24_new_MUTATED <- x24_party_reg %>% 
+ mutate(percentage_dem = DEM / 38265 * 100, percentage_rep = REP / 38265 * 100, percentage_unaf = UNAF / 38265 * 100
+        )
+
+x22_new_MUTATED <- x22_party_reg %>% 
+  mutate(percentage_dem = DEM / 37623 * 100, percentage_rep = REP / 37623 * 100, percentage_unaf = UNAF / 37623 * 100
+        )
+
+#step 2 would be putting these together with their current reg counterparts, but I don't see a way to join the two of them. My attempts are below: 
+
+
+x24_new_FILTERED <- x24_new_MUTATED %>% 
+  filter(type_of_reg == "TOTAL") 
+
+x24_new_FILTERED <- x24_new_FILTERED %>%
+  select(-"NLM", "LIB", "GRN", "UNAF", "OTH")
+
+#consulting chatgpt on how to remove columns from a table in R
+#chat gave me this: your_data <- your_data %>%  select(-column_to_remove1, -column_to_remove2)
+#not working 
+#I'm thinking if I can get them just down to their totals and percentages I can stack em but it's not working. 
+
+
+#I'm just gonna look at them. 
+
+#2024 new registrants: 
+#new dems = 49.85496%
+#new repubs = 18.23337%
+#new unaffiliated = 28.68156%
+#2024 current registrants: 
+#dems = 52.45109010%
+#reps = 23.8531523%
+#unaffiliated = 21.83500366%
+#IN 2024, THERE WAS A LARGER % OF UNAFFILIATED VOTERS COMPARED TO REGISTERED VOTERS, AND SMALLER %S OF NEW DEMOCRATS AND REPUBLICANS COMPARED TO REGISTERED VOTERS
+
+#2022 new registrants: 
+#new dems = 51.638625309%
+#new repubs = 15.04664700%
+#new unaffiliated = 30.60096218%
+#2024 current registrants: 
+#dems = 54.08835514%
+#reps = 24.0026941%
+#unaffiliated = 20.22216258%
+#SAME TREND IN 2022: HIGHER PERCENTAGE OF NEWLY REGISTERED UNAFFILIATED VOTERS AND SMALLER PERCENTAGES OF NEW DEMOCRATS AND REPUBLICANS. 
+
+
+```
+
+Q4. Choose your own adventure! Using both the 2024 and 2022 data for one of the dataframes (changes, removals or new registrations), ask and answer a question that makes at least one comparison and requires code to answer. That could involve calculating a percentage, percentage change or the raw difference between two columns.
+
+A4.
+
+I looked at how by-mail and in-person voter registration changed from 2022 to 2024. I found that the percentage of mail-in voter registration (of total registration) increased by 8.9% from 22-24, and the percentage in-person voter registration increased by over 322 percent!! I'd say the increase in in-person registration is probably because of the covid vaccine and the pandemic easing. 
+
+```{r}
+
+#I want to look at how in-person vs mail-in registration changed from 2022 to 2024. 
+
+#2022
+
+#by mail = 1766
+#in person = 90
+#total new registrations = 37623
+
+x22_by_mail <-(1766/37623)*100 
+x22_in_person <- (90/37623)*100
+
+
+#2024 
+#by mail = 1956
+#in person = 387
+#total new registrations = 38265
+
+x24_by_mail <- (1956/38265)*100
+x24_in_person <- (387/38265)*100
+
+#calculating % changes 
+
+by_mail_pct_change <- ((x24_by_mail-x22_by_mail)/x22_by_mail)*100
+in_person_pct_change <- ((x24_in_person - x22_in_person)/x22_in_person)*100
+
+
+
+```
+
+Q5. What's the best story idea or question you've seen as a result of the work you've done in this lab?
+
+A5.
+
+I liked what I found with lab 5, where I found that the most common type of employment among one political candidate's donors was "unemployed." There's a chance there could be a good story there!
+
