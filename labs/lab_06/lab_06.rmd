@@ -163,6 +163,19 @@ pct_change_dem <- ((x24_pct_dem - x22_pct_dem) / x22_pct_dem)
 pct_change_rep <- ((x24_pct_rep - x22_pct_rep) / x22_pct_rep)
 pct_change_unaf <- ((x24_pct_unaf - x22_pct_unaf) / x22_pct_unaf)
 
+#how to do this programmatically: going over this in class 
+#join them together! 
+#YOU NEED TO RENAME COLUMN NAMES: perc_dem_22 vs perc_dem_24
+#join_by (county==county) to tell it what matches. 
+
+x24_current_MUTATED %>% 
+  inner_join(pre_join_2022,
+             join_by(county==county)) %>% 
+  mutate(difference = perc_dem_2024 - perc_dem_2022, difference_unaf = perc_unaf_2024 - perc_unaf_2022, difference_rep = perc_rep_2024 - perc_rep_2022) %>% 
+  arrange(desc(difference)) %>% 
+  select (county, difference_dem, difference_unaf, difference_rep)
+
+#bam that ^ should work!
 
 ```
 

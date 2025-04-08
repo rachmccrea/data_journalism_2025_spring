@@ -180,11 +180,24 @@ donors %>%
 
 ### Sentence 4
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: “Add in donations to the two main political parties and to a handful of other large fundraising vehicles for state legislative races, and the in-session giving topped $3.4 million. Gov. Roy Cooper's main campaign account brought in another $407,000 during session.”
+
+* **Analysis summary**: We were able to find the total in-session giving of over $3.4 million. Our number was 3446455. As of right now, we're unable to prove the Cooper thing -- we can't find his campaign in the data. 
 
 ```{r}
 # Put code to reverse engineer sentence here
+#step 1: find total in-session giving. 
+
+donors %>% 
+  filter(date >= '2018-05-16' & date <= '2018-06-29') %>% 
+  summarize(sum(amount))
+
+#step 2: find out how much money Gov. Roy Cooper's campaign account brought in. 
+campaign_totals <- donors %>% 
+  filter(date >= '2018-05-16' & date <= '2018-06-29') %>% 
+  group_by(committee_name) %>% 
+  summarize(sum = sum(amount)) %>% 
+  filter(sum >= 407000)
 
 # Display results of code below this codeblock
 
@@ -192,13 +205,29 @@ donors %>%
 
 ### Sentence 5
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Sentence text**: “A WRAL News analysis of campaign finance filings also turned up $16,000 in donations to legislative campaigns during session from 15 PACs with a lobbyist. Each would appear to be a violation of state fundraising rules, but spokespeople for most of the PACs, or the companies they represent, said there was a simple explanation: The checks were written before session.”
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
 # Put code to reverse engineer sentence here
+#find PACs 
+# Filter for donations from PACs during the legislative session
+pac_donations <- donors |>
+  filter(date >= '2018-05-16' & date <= '2018-06-29') |>
+  filter(str_detect(name_clean, "PAC"))  # More flexible matching
+
+# View total amount
+total_pac_amount <- pac_donations |>
+  summarise(total_amount = sum(amount))
+
+print(total_pac_amount)
+
+# Optional: View individual PAC donations (to check for lobbyist links manually or join with a lobbyist list)
+print(pac_donations)
 
 # Display results of code below this codeblock
+
+#USED CHATGPT -- HELPED IMPROVE ORIGINAL CODE. BRINKLEY HAD THE CODE WRITTEN, GOT AN ERROR, ASKED CHAT, CHAT ADDED THE PART FOR TOTAL PAC DONATIONS. 
 
 ```
 

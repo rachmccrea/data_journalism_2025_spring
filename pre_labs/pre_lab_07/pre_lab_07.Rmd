@@ -9,6 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+#API NOTES 
+API = how computers talk to each other on the internet
+basically what's under the hood. 
+we want data that's for computers to read, so we use tidycensus, our first API. 
+tidycensus is a wrapper on top of the API
+
+
+
 ### Task 1: Load libraries and settings
 
 **Task** Run the following code in the gray-colored codeblock below to load the tidyverse library and the tidycensus library (remove the comment in front of install.packages if you need to install the latter)
@@ -47,6 +55,8 @@ So to give you some idea of how complicated the data is, let's pull up just one 
 ```{r}
 sf1 <- load_variables(2010, "sf1", cache = TRUE)
 View(sf1)
+#variable is the name for whatever it is. 
+#cache = true stores it on your computer. you don't have to run the api again
 ```
 
 Note: There are thousands of variables in SF1. That's not a typo. Open it in your environment by double clicking. As you scroll down, you'll get an idea of what you've got to choose from.

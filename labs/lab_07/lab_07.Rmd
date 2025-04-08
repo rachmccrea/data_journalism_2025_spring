@@ -1,0 +1,246 @@
+---
+title: "lab_07"
+author: "derek willis"
+date: "2024-08-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+-   A Census API key
+
+## Load libraries and establish settings
+
+You'll need to load two packages for this: the tidyverse and tidycensus.
+
+**Task** load these two packages
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load the tidyverse.
+library(tidyverse)
+library(tidycensus)
+library(dplyr)
+```
+
+## Setup Census API
+
+You'll need your Census API Key:
+
+**Task** set your API Key *only* if you haven't already
+
+```{r echo=FALSE}
+census_api_key("738bbf398565b3bd6d468669a0ef4374f13c150b", overwrite=TRUE)
+```
+
+## Load and view ACS variables
+
+You'll also need to load the list of American Community Survey variables from the 2022 5-year estimates so you can identify the codes you need:
+
+**Task** load the variables from the 2022 5-year ACS and save them to a dataframe
+
+```{r}
+acs_variables_2022 <- load_variables(2022, "acs1")
+```
+
+## Answer questions
+
+**Q1** What is the Maryland jurisdiction with the lowest median age, according to the ACS 2022 5-year estimates? You will need to find the variable for median age first.
+
+**A1**
+
+Baltimore City has the youngest median age at 36 years and a margin of error of 0.2 
+
+```{r}
+
+#step one is figure out how to get that data 
+acs_md<- get_acs(geography = "county",
+              variables = c(median_age = "B01002_001"),
+              state = "MD",
+              year = 2022) 
+
+#now I gotta arrange it
+acs_md %>% 
+  arrange(desc(estimate))
+
+
+```
+
+**Q2** Which Maryland counties have a median age of at least 50? You can use the dataframe you just made to answer this, but you must write code to display only those counties with a median age of at least 50.
+
+**A2** Talbot and Worcester have a median age of at least 50. 
+
+```{r}
+acs_md %>% 
+  filter(estimate>=50)
+
+
+```
+
+## Ticket-Splitting
+
+Ticket-splitting (voting for candidates from multiple parties) in today's political environment seems like a rarity, but it does happen, even in states like Maryland. For the remaining questions you'll be looking at cast vote records from Frederick County - Maryland's most competitive county - for the 2022 general election. You'll be trying to identify the zip codes where ticket-splitting is happening the most and to learn more about those places. To do that, you'll need to read in two CSV files, join them and then also bring in data from the Census API.
+
+### Setup
+
+Load the two CSV files in the `data` folder: one containing the ballot choices of Frederick voters in five races (governor, comptroller, attorney general and U.S. House) and the other containing information about Frederick's voting locations. You'll need to join them together.
+
+```{r}
+frederick_cvr <- read_csv("data/frederick_cvr.csv")
+frederick_precincts <- read_csv("data/frederick_precincts.csv")
+
+```
+
+**Q3** Let's answer some basic questions about ticket-splitting: how many voters voted for different parties in the governor and comptroller's race? How many voted for the same party in both races? What percentage of all voters split their tickets in those races? In how many cases did voters choose the same party in all five contests? What percentage of all voters does that represent?
+
+**A3**
+11,871 voters split their tickets in the governor and comptroller's race. That's about 11% of voters. 95,221 voters voted for the same party in those races. 89,916 people chose the same party in all 5 races, which is about 83.8% of all voters. 
+
+```{r}
+
+#how many voters voted for different parties in the governor and comptroller's race? 
+frederick_cvr %>% 
+  filter(governor_lt_governor != comptroller) %>% 
+  summarize(count = n())
+#11871
+
+#how many voters voted for the same party in the governor and comptroller's races? 
+frederick_cvr %>% 
+  filter(governor_lt_governor == comptroller) %>% 
+  summarize(count = n())
+#95221
+
+#what percentage of all voters split their tickets in the gov/comptroller races? 
+
+frederick_cvr %>% 
+  mutate(ticket = case_when(governor_lt_governor != comptroller ~ "split_ticket"))
+#I used chat to help remind me how to use case_when 
+#I then kept getting an error, so I plugged it into chat. It told me I needed to do TRUE ~ "other" so I'm gonna try it again. 
+#also turns out i forgot a parentheses
+
+ticket_frederick_cvr <- frederick_cvr %>% 
+  mutate(ticket = case_when(governor_lt_governor != comptroller ~ "split_ticket", TRUE ~ "not_split_ticket")) 
+#forgot a parentheses :( works now tho 
+#chatgpt told me about TRUE ~ "other" but i changed "other"
+
+ticket_frederick_cvr %>% 
+  group_by(ticket) %>% 
+  summarize(count = n())
+
+#count_ticket_frederick <- ticket_frederick_cvr %>% 
+ # mutate(split = n("split_ticket"), not_split = n("not_split_ticket"), total = n())
+
+#I keep getting an error message. Consulting chatgpt. 
+#chatgpt told me to make new columns using sum() for split and not split, and showed me the code to use: 
+  #count_ticket_frederick <- ticket_frederick_cvr %>% 
+ # mutate(
+    #split = sum(ticket_frederick_cvr$ticket_type == "split_ticket"),
+    #not_split = sum(ticket_frederick_cvr$ticket_type == "not_split_ticket"),
+    #total = n()
+
+#chatgpt also reminded me to load dplyr.
+
+count_ticket_frederick <- ticket_frederick_cvr %>% 
+  mutate(split = sum(ticket == "split_ticket"), not_split = sum(ticket == "not_split_ticket"), total = n()
+                                                                  )
+#THAT WORKED! THANK YOU CHAT. 
+
+pct_split <- count_ticket_frederick %>% 
+  mutate(pct_split = split/total * 100, pct_same = not_split/total * 100)
+  
+  
+pct_split_selected <- pct_split %>% 
+  select(cast_vote_record, governor_lt_governor, comptroller, ticket, split, not_split, total, pct_split, pct_same)
+view(pct_split_selected)
+#About 11% of voters split their ticket!
+
+
+#in how many cases did voters choose the same party in all five contests? 
+
+five_for_fives <- frederick_cvr %>% 
+  filter(governor_lt_governor == comptroller & comptroller == attorney_general & attorney_general == u_s_senator & u_s_senator == representative_in_congress_6)
+#89916 people chose the same party in all 5 contests. 
+
+#what percentage of all voters does that represent? 
+all_percentages_together <- pct_split %>% 
+  left_join(five_for_fives, join_by(cast_vote_record == cast_vote_record))
+
+#started with inner join, but it dropped it down to 89916 values so trying left join -- yup that worked better. 
+
+all_percentages_together %>% 
+  mutate(x5for5 = case_when(governor_lt_governor.y == comptroller.y & comptroller.y == attorney_general.y & attorney_general.y == u_s_senator.y & u_s_senator.y == representative_in_congress_6.y ~ "x5for5", TRUE ~ "not5for5")) %>% 
+  mutate(x5for5 = sum(x5for5 == "x5for5"), not_5for5 = sum(x5for5 == "not5for5")) %>% 
+  mutate(pct_5for5 = x5for5/total * 100)
+#about 83.8% of voters went 5 for 5.
+```
+
+**Q4** Now let's look for the zip codes where voters preferred Republicans in every race *except* the governor's race, where Dan Cox lost to Wes Moore by a wide margin. Write code to generate a dataframe of zip codes with the number of those voters for each of those zip codes, ordering the dataframe so that the zip code with the most ticket-splitters appears first.
+
+**A4**
+The zip code with the highest number of people who split their tickets like this was 21702, with 115.
+
+```{r}
+
+joined_frederick <- pct_split %>% 
+  inner_join(frederick_precincts, join_by(precinct == precinct)) %>% 
+  filter(governor_lt_governor == "DEM" & comptroller == "REP" & attorney_general == "REP" & u_s_senator == "REP" & representative_in_congress_6 == "REP")
+
+
+joined_frederick %>% 
+  group_by(zipcode) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+    
+
+```
+
+**Q5** Let's find out more about those zip codes from A4. Using tidycensus, get a dataframe of Maryland zip codes and their median ages, then join it to the dataframe you produced in A4. NOTE: you'll need to ensure that the two columns you use for the join are the same datatype. Summarize your findings; how would you describe the zip codes with more non-Cox Republicans compared to those with fewer? Where are those leading zip codes located?
+
+The zipcode with the highest number of non-Cox Republicans is in Frederick itself. The #2 and #3 zipcodes are just east to #1. These top 3 zipcodes have median ages in the late 30s and early 40s. 
+Two of the zipcodes with the lowest number of non-Cox Republicans were farther south, near the river. However, the zipcode with the fewest of these voters (2) borders Pennsylvania. The median age for these 3 zipcodes ranges from the late 30s to mid 50s. 
+
+```{r}
+acs_zips <- get_acs( 
+                  geography = "zcta",
+              variables = c(median_age = "B01002_001"),
+              year = 2022)
+
+#googling what geography type a zip code is for the census api
+#internet is unhelpful ("ZCTA" doesn't work). consulting chatgpt
+#chatgpt says use "zcta5" instead -- I gave it my code and the error message I've been getting about unknown/unsupported geography hierarchy. same thing. It then told me to load a new package. i said no i don't want to and it gave me "zcta" again. 
+#I asked it "what kinds of geography hierarchy exist in the us census api and tidycensus?" and it gave me the same zcta or zcta5 answer. 
+#I figured the "hierarchy" was what was weird so I deleted "state = MD". but that means i get zips with no state. so trying again
+#nope rearranging "state" doesn't work
+#HOWEVER. all Frederick zip codes begin with 217. I can work with that. 
+
+```
+```{r}
+acs_frederick <- acs_zips %>% 
+  filter(GEOID <= 21798 & GEOID >= 21701)
+
+acs_frederick <- acs_frederick %>% 
+  mutate(GEOID = as.numeric(GEOID))
+
+glimpse(acs_frederick)
+
+zip_joined_frederick <- acs_frederick %>% 
+  left_join(joined_frederick, join_by(GEOID == zipcode)) %>% 
+  filter(governor_lt_governor == "DEM" & comptroller == "REP" & attorney_general == "REP" & u_s_senator == "REP" & representative_in_congress_6 == "REP") %>% 
+  group_by(GEOID, estimate) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+
+zip_joined_frederick
+
+#I used an inner join first, then a left join. I'm not sure what works best here, but I think left join is probably the way to go because I'm just adding zipcodes. 
+
+#leading zipcodes: 21702, 21701, 21793
+#bottom zipcodes: 21777, 21718, 21780
+```
+
