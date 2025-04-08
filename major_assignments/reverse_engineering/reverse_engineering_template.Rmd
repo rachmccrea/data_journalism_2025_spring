@@ -113,7 +113,7 @@ donors %>%
 #bell = repub = 2500	
 #burr = repub = 1000
 
-12500+12500+12500+10000+10000+10000+10000+5000+4000+2500+2500+2500+2500+1000 = 97500
+#12500+12500+12500+10000+10000+10000+10000+5000+4000+2500+2500+2500+2500+1000 = 97500
 # Display results of code below this codeblock
 
 ```
@@ -180,24 +180,34 @@ donors %>%
 
 ### Sentence 4
 
-* **Sentence text**: “Add in donations to the two main political parties and to a handful of other large fundraising vehicles for state legislative races, and the in-session giving topped $3.4 million. Gov. Roy Cooper's main campaign account brought in another $407,000 during session.”
+* **Sentence text**: Add in donations to the two main political parties and to a handful of other large fundraising vehicles for state legislative races, and the in-session giving topped $3.4 million. Gov. Roy Cooper's main campaign account brought in another $407,000 during session.
 
-* **Analysis summary**: We were able to find the total in-session giving of over $3.4 million. Our number was 3446455. As of right now, we're unable to prove the Cooper thing -- we can't find his campaign in the data. 
+* **Analysis summary**:We were able to confirm that total in-session donations was over $3.4 million. However, we couldn’t find anything about the governor’s campaign. After trying several times, we were unable to prove the part of the paragraph about the governor’s campaign finances. His campaign is supposed to be called “Roy Cooper for North Carolina” and it wasn’t in the dataset. We tried different combinations and other ideas but couldn’t find anything, so we’re unable to prove this one.
 
 ```{r}
 # Put code to reverse engineer sentence here
-#step 1: find total in-session giving. 
 
-donors %>% 
-  filter(date >= '2018-05-16' & date <= '2018-06-29') %>% 
-  summarize(sum(amount))
+##find total in-session giving##
+donors |>
+  filter(date >= '2018-05-16' & date <= '2018-06-29') |>
+  summarise(sum(amount))
 
-#step 2: find out how much money Gov. Roy Cooper's campaign account brought in. 
-campaign_totals <- donors %>% 
-  filter(date >= '2018-05-16' & date <= '2018-06-29') %>% 
-  group_by(committee_name) %>% 
-  summarize(sum = sum(amount)) %>% 
-  filter(sum >= 407000)
+##Gov. Roy Cooper's main campaign account donation total## ##could not prove at this point in time due to lack of ability in finding the committee's name in the provided data##
+
+campaign_totals <- donors |>
+  filter(date >= '2018-05-16' & date <= '2018-06-29') |>
+  filter(name_clean == "COOPER FOR NORTH CAROLINA" | committee_name == "NC DEC - STATE" | committee_name == "NORTH CAROLINA DEMOCRATIC PARTY - BUILDING") |>
+  group_by(name_clean, committee_name, date, amount) |>
+  summarise(
+    total_amount = sum(amount, na.rm = TRUE)
+  ) |>
+  arrange(desc(total_amount))
+
+campaign_totals
+
+##Fiona: there are no names that go with Roy Cooper or his main campaign. I have looked literally everywhere I could think of. There is only one entry that pops up, but it is only a approx. 550$ donation. Unless all of these donations are under a different campaign name that we would have no way of knowing what it is, I don't see this information being in this dataset. I tried to filter maybe by NC DEC - STATE or NORTH CAROLINA DEMOCRACTIC PARTY - BUILDING, but was unsuccessful (as I cannot confirm that these donations were for him nor do the numbers match [or if some of them are I have no way of knowing which/any/all]). And to confirm, I have bookmarked links online for what his main campaign account was named at the time of this articles publishment, and it is confirmed to be "Roy Cooper For North Carolina"##
+
+##Fiona: I have gone sleuthing though to try to find the information elsewhere, and I have stumbled across the last remaining access to 2018 financial data of Cooper --> can be found at this link (https://cf.ncsbe.gov/CFOrgLkup/ReportSection/?RID=166493&SID=STA-C0498N-C-002&CN=COOPER%20FOR%20NORTH%20CAROLINA&RN=2018%20Mid%20Year%20Semi-Annual).##
 
 # Display results of code below this codeblock
 
@@ -205,30 +215,56 @@ campaign_totals <- donors %>%
 
 ### Sentence 5
 
-* **Sentence text**: “A WRAL News analysis of campaign finance filings also turned up $16,000 in donations to legislative campaigns during session from 15 PACs with a lobbyist. Each would appear to be a violation of state fundraising rules, but spokespeople for most of the PACs, or the companies they represent, said there was a simple explanation: The checks were written before session.”
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text** A WRAL News analysis of campaign finance filings also turned up $16,000 in donations to legislative campaigns during session from 15 PACs with a lobbyist. Each would appear to be a violation of state fundraising rules, but spokespeople for most of the PACs, or the companies they represent, said there was a simple explanation: The checks were written before session.
+
+* **Analysis summary**: After checking with North Carolina lobbyist registrations which of the PACs in this dataset had a lobbyist, we found well over $16,000 worth of in-session donations from the PACs we filtered for. The article itself was pretty vague, which was very unhelpful.
 
 ```{r}
 # Put code to reverse engineer sentence here
-#find PACs 
+##used chat to help improve code structure, Brinkley had the code already written but chat added the part about for total PAC donations##
+
 # Filter for donations from PACs during the legislative session
 pac_donations <- donors |>
   filter(date >= '2018-05-16' & date <= '2018-06-29') |>
   filter(str_detect(name_clean, "PAC"))  # More flexible matching
 
-# View total amount
+# View total amount; filtered these specific PAC's because they were listed, by way of a NC Secretary of State's Office 2018 document, as North Carolina lobbyist listings. also took into account information Brinkley found that listed PAC's with lobbyists at this time in this assembly and pulled out the specific ones listed in our data set and time frame etc.#
 total_pac_amount <- pac_donations |>
-  summarise(total_amount = sum(amount))
+  filter(date >= '2018-05-16' & date <= '2018-06-29') |>
+  filter(name_clean == "NORTH CAROLINA BEER & WINE WHOLESALERS ASSOC PAC" | name_clean == "NC OUTDOOR ADVERTISING ASSOC PAC" | name_clean == "NC CHIROPRACTIC ASSOC PAC" | name_clean == "NC STATE OPTOMETRIC SOCIETY PAC" | name_clean == "NC FIRE PAC" | name_clean == "NC ADCOVATES FOR JUSTICE PAC" | name_clean == "NC PORK COUNCIL PAC" | name_clean == "NC POULTRY FEDERATION PAC" | name_clean == "NC POULTRY FEDERATION PAC" | name_clean == "SMITHFIELD FOODS PAC" | name_clean == "WALMART STORES PAC" | name_clean == "WARD AND SMITH PAC" | name_clean == "REMY KEMP & ASSOCIATES PAC" | name_clean == "BB&T PAC" | name_clean == "AT&T PAC" | name_clean == "NATIONWIDE CAROLINA PAC") |>
+  group_by(name_clean, date, amount) |>
+  summarise(
+    total_amount = sum(amount, na.rm = TRUE)
+    )
 
-print(total_pac_amount)
+#total_pac_amount --> #waaaaay > than 16,000; like 33,000+#
 
 # Optional: View individual PAC donations (to check for lobbyist links manually or join with a lobbyist list)
-print(pac_donations)
+#print(pac_donations)
 
 # Display results of code below this codeblock
 
-#USED CHATGPT -- HELPED IMPROVE ORIGINAL CODE. BRINKLEY HAD THE CODE WRITTEN, GOT AN ERROR, ASKED CHAT, CHAT ADDED THE PART FOR TOTAL PAC DONATIONS. 
-
 ```
 
--30-
+
+Memo: 
+
+What are the main findings of the story?
+
+This WRAL article is centered around the exploration of how CEOs and other types of top executives were found to have largely contributed to campaign accounts during session. It’s against state law to donate during session, but groups have found workarounds. Either business executives donate as individuals, or PACs write checks before session and send them during session. The story is pointing out these loopholes they found in campaign donation rules and how they were exploited. They name specific groups and individuals who they found donated during session, including groups like hog farmers and beer distributors that had significant legislative stakes in that 2018 session. They did this reporting by analyzing campaign finance reports for legislators, then talking to people who donated or received donations, and to a watchdog group. It’s an example of data journalism informing investigative journalism to expose something that could be really impactful.
+
+What did the reporter(s) do to bring the story to life, beyond the data findings? Did they use the data as a tool to find and tell a compelling story? Was their approach effective? Why?
+
+The reporters talked to a lot of the people involved, and were able to get responses from some of the folks who either gave during session or received donations given during session. That not only added credibility to the journalists’ data analysis, it also added some color to the story by letting people explain their take on it. It was a good human element instead of just a bunch of numbers, and giving lobbyists and politicians the opportunity to explain the reasons for in-session donations made for a more well-rounded story. The reader is able to come to their own conclusion that way. The subhead also helped bring the story to life by including a great quote that summed up the story: “Sort of like a loophole you could drive a Mac truck through.” However, this approach didn’t bring enough life to the story to make it engaging and interesting. The story was about the data findings: who gave during session, how much, and to whom. These were significant findings, but the journalists’ approach wasn’t very effective. They didn’t do a great job of putting numbers into context or explaining the significance of these loopholes they found. They didn’t explain how it affected readers or why it’s important. 
+
+How did the reporter(s) communicate their specific data findings in the story? How could it have been improved?
+
+The findings were all communicated in prose, which made it difficult to parse at times. A lot of the paragraphs were full of big numbers, and after a while it became hard to assign any kind of significance to those numbers. The story was difficult to follow – we had to read it multiple times to understand it before working on our reverse engineering. By including more data visualizations, the journalists could have cut back on the amount of big numbers in the prose and stuck to the really important ones, letting the story breathe a little bit and helping the reader understand what’s important. They have a graphic of the timeline of donations that includes the cutoff, which is helpful. However, it comes pretty far down in the story. That graphic should be moved up in the story towards the top so that readers have that understanding early on and don’t get overwhelmed by the numbers in the prose. Other graphics might include a visualization of which groups gave the most money during session, and to whom. 
+
+How did the reporter(s) communicate any flaws or shortcomings in the data or analysis method that could affect their findings? Did they make it easy for readers to see their work?
+
+The reporters didn’t communicate any flaws or shortcomings in the story, or anything about the analysis. There are links midway down the story for methodology and data. They’re pretty easy to miss (had to use ctrl+F to find them), but they’re there. The methodology link takes you to a story explaining what data they used and what they were analyzing. They bring up the potential issue of double-counting and how they addressed it in their analysis. They don’t go into much detail about how they actually did the analysis, though. They don’t specify what programming language they used, and they don’t walk the reader through their process. The link to the GitHub has a README file that has the same text from the methodology story, and csv/excel files of the data they used. There’s no documentation of the actual code that they ran to get their findings, though, which isn’t ideal. In the interest of transparency, it’s probably a good idea to have the code readily available for anyone who’d like to check it. Anyone trying to fact-check this story would be left in the dark for how the journalists came up with certain findings. During our own reverse engineering, there were some things (like the governor’s campaign) that showed up in the story but not in the dataset provided. To promote more responsible and transparent journalism, these journalists should have their entire process documented in GitHub. Additionally, the reporters did a poor job of communicating to the reader, specifying which session they were referencing. As a reader, it made it confusing to follow. As a data journalist, it was even more difficult to understand. It took us a while to figure out what session and specific dates we would need to use when working on our code. This also made it challenging to fact-check our data.
+
+Where did the data set(s) come from? Did they have to build the data set themselves? Did they have to do extensive work to clean and prepare the data before analysis?
+
+The data set came from North Carolina State Board of Elections and Ethics Enforcement campaign finance reports. The journalists write in their methodology that they used Open Refine to clean up the contributor names, but don’t say whether they built the dataset or downloaded it from online. We checked out the campaign finance report website linked in the methodology story. It seems like the journalists probably had to build the data set themselves since you can’t search for all campaign donations by time period. There are four things that the site says you can search by: committee/entity, document type, reported transaction, and penalty. The journalists probably looked up all the legislators’ committees on here and combined the data they got in a single dataset, then cleaned it up. However, it’s not good that we have to guess how they did this. They should be able to walk readers through that in their methodology.
