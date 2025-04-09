@@ -114,6 +114,7 @@ After we've invoked the ggplot() function, you'll notice we're using a + symbol.
 maryland_top_counties |>
   ggplot() +
   geom_bar(aes(x=County, weight=UNAF_DIFF))
+#weight = y axis, more or less. 
 ```
 
 This is a very basic chart. But it's hard to derive much meaning from this chart, because the counties aren't ordered from highest to lowest by total_loans. We can fix that by using the reorder() function to do just that:
