@@ -113,7 +113,7 @@ I think the most interesting story for both would be the tiny pockets in each ma
 
 
 ```{r}
-census_api_key("738bbf398565b3bd6d468669a0ef4374f13c150b", overwrite=TRUE)
+census_api_key("github doesn't get my API key", overwrite=TRUE)
 ```
 
 
