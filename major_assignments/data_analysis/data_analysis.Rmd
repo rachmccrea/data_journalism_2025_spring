@@ -1,0 +1,52 @@
+---
+title: "data_analysis"
+author: "Rachel McCrea"
+date: "2025-04-25"
+output: html_document
+---
+```{r load-packages}
+library(tidyverse)  
+library(knitr)      
+library(lubridate) 
+library(janitor)
+```
+
+```{r}
+detail_sod <- read_csv("detail_sod.csv")
+```
+#fixing dates
+```{r}
+detail_sod <- detail_sod %>% 
+  mutate(TRANSACTION_DATE=dmy(TRANSACTION_DATE))
+```
+```{r}
+ detail_sod <- detail_sod %>% 
+  mutate(PERFORM_START_DT=dmy(PERFORM_START_DT))
+```
+```{r}
+detail_sod <- detail_sod %>% 
+  mutate(PERFORM_END_DT=dmy(PERFORM_END_DT))
+```
+```{r}
+write_csv(detail_sod, "detail_sod_clean.csv")
+```
+
+
+```{r}
+detail_sod_clean <- read_csv("detail_sod_clean.csv")
+
+glimpse(detail_sod_clean)
+```
+129,843 rows, 18 columns including dates of transactions, which office spent the money, the description of the transaction, and the amount. 
+Limitations/flaws: No party column, which would have been handy if we wanted to look at differences in spending between parties. I bet it's also hard to group by "description" because there are so many different kinds of spending listed, and "legislative planning food and beverage" is different from "food and beverage". The limited timeframe could also be an issue. 
+
+```{r}
+summary_sod <- read_csv("summary_sod.csv")
+
+glimpse(summary_sod)
+```
+6676 rows and five columns: organization, program, description, year-to-date amount, and quarter-to-date amount. 
+Similar limitations/flaws to the detailed one: timeframe, lots of different categories for "description," no party identifier. I was also seeing some negative numbers in the amounts columns which is weird. 
+
+
+
