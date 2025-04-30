@@ -5,10 +5,13 @@ date: "2025-04-25"
 output: html_document
 ---
 ```{r load-packages}
+options(scipen=999)
 library(tidyverse)  
 library(knitr)      
 library(lubridate) 
 library(janitor)
+library(ggplot2)
+library(ggrepel)
 ```
 
 ```{r}
@@ -47,6 +50,73 @@ glimpse(summary_sod)
 ```
 6676 rows and five columns: organization, program, description, year-to-date amount, and quarter-to-date amount. 
 Similar limitations/flaws to the detailed one: timeframe, lots of different categories for "description," no party identifier. I was also seeing some negative numbers in the amounts columns which is weird. 
+
+
+
+4/30 
+
+```{r}
+summary_sod <- read_csv("summary_sod.csv")
+
+grouped_by_org <- summary_sod %>% 
+  group_by(ORGANIZATION) %>% 
+  summarize(sum = sum(YTD_AMOUNT)) %>% 
+  arrange(desc(sum))
+
+grouped_by_org %>% 
+  clean_names()
+
+
+#ok let's figure out a bar chart 
+#there's toooo many reps so I'm gonna do the five highest spenders and five lowest spenders, not including House leadership
+
+highest_lowest_spenders <- grouped_by_org %>% 
+  filter(ORGANIZATION %in% c('2024 HON. JENNIFFER GONZALEZ-COLON','2024 HON. ALEXANDER X. MOONEY','2024 HON. MATT CARTWRIGHT','2024 HON. JEFFERSON VAN DREW','2024 HON. ADAM B. SCHIFF','2024 HON. TONY WIED','2024 HON. 3RD DISTRICT OF NEW YORK','2024 HON. ERICA LEE CARTER','2024 HON. LAMONICA MCIVER','2024 HON. BRIAN HIGGINS'))
+
+#mira helped figure out the filtering using the c() stuff!
+
+highest_lowest_spenders %>% 
+  ggplot() + 
+  geom_bar(aes(x = ORGANIZATION, weight = sum)) +
+  theme(
+    element_text(angle = 45)) 
+  
+#can't get the bar labels to go at an angle. consulting chat. 
+#here's what chat says: 
+#highest_lowest_spenders %>% 
+ # ggplot() + 
+ # geom_bar(aes(x = ORGANIZATION, weight = sum)) +
+ # theme(
+   # axis.text.x = element_text(angle = 45, hjust = 1)
+ # )
+
+highest_lowest_spenders %>% 
+  ggplot() + 
+  geom_bar(aes(x = ORGANIZATION, weight = sum)) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+#THAT WORKED THANKS CHAT!
+
+highest_lowest_spenders %>% 
+  ggplot() + 
+  geom_bar(aes(x = ORGANIZATION, weight = sum)) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  labs(
+    title="Highest vs. Lowest-Spending Represenatives", 
+    x="Representative Offices",
+    y="Spending"
+  )
+
+
+
+
+
+```
+
 
 
 
