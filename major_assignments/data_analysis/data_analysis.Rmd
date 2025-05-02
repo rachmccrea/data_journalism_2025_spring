@@ -52,9 +52,10 @@ glimpse(summary_sod)
 Similar limitations/flaws to the detailed one: timeframe, lots of different categories for "description," no party identifier. I was also seeing some negative numbers in the amounts columns which is weird. 
 
 
-
-qUESTION: HOW DOES SPENDING VARY AMONG REPRESENTATIVES?
+Rachel
+QUESTION: HOW DOES SPENDING VARY AMONG REPRESENTATIVES?
 I've got a bar chart of the highest and lowest spending reps, some summary stats, and a very rough draft of a normal distribution graphic. 
+Findings: spending varies significantly among representatives, with some spending well over 6 million and some spending under 500K. Most of the spending was somewhere between 4 and 6 million dollars. The highest spender was apparently the governor of Puerto Rico and the lowest spender was a GOP rep from Wisconsin. 
 
 ```{r}
 
