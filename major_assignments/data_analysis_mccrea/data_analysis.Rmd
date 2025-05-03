@@ -14,7 +14,7 @@ library(ggplot2)
 library(ggrepel)
 ```
 
-Something weird happened w my file when I zipped it (wouldn't let me save) so I'm copying what I have from what I was working on and trying to save again. ok it worked. here we go. 
+Note: Something weird happened w my file when I zipped it (wouldn't let me save anymore) so I opened up my r notebook again in a new window and copied things into it. 
 
 
 ```{r}
@@ -369,6 +369,59 @@ grouped_by_reps %>%
 
 ```
 
+--------------------------------------------------------------------------------------------------------
+MIRA: looking at caucus expenditures 
+```{r}
+#looking at expenditures between the House Caucuses in 2024 
+party_caucus <- detail_sod |>
+  filter(ORGANIZATION %in% c("2024 DEMOCRATIC CAUCUS", "2024 REPUBLICAN CONFERENCE"))
+
+#spending between the caucuses
+party_caucus |>
+   group_by(ORGANIZATION) |>
+  summarise(total_spent = sum(AMOUNT, na.rm = TRUE)) |>
+  arrange(desc(total_spent))
+```
+```{r}
+ party_caucus |>
+  group_by(ORGANIZATION, SORT_SUBTOTAL_DESCRIPTION) |>
+  summarise(category_spent = sum(AMOUNT, na.rm = TRUE)) |>
+  arrange(desc(category_spent))
+```
+
+```{r}
+#make a chart! #thanks chat for helping me out with this one
+party_caucus |>
+  group_by(ORGANIZATION, SORT_SUBTOTAL_DESCRIPTION) |>
+  summarise(category_spent = sum(AMOUNT, na.rm = TRUE), .groups = "drop") |>
+  ggplot(aes(x = reorder(SORT_SUBTOTAL_DESCRIPTION, -category_spent),
+             y = category_spent,
+             fill = ORGANIZATION)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Spending Category", y = "Total Spent",
+       title = "2024 Expenditures by House Caucuses") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+party_caucus |>
+  group_by(ORGANIZATION, DESCRIPTION) |>
+  summarise(count = n(), total_spent = sum(AMOUNT, na.rm = TRUE),.groups = "drop") |>
+  arrange(desc(total_spent))
+
+write_csv(party_caucus, "party_caucus.csv")
+```
+
+Basically what I did here was I wanted to look at the spending between the House Caucuses in 2024 (Republican and Democrat). First I made a new dataset with just the rows from the caucuses. Then I looked at the spending based on the category and made a bar chart!I was interested that Democrats spent a lot more than Republicans on personal compensation. Then there's another column called DESCRIPTION which has a more specific description of the expenditures. I put the dataset into OpenRefine to see if it could find any clusters but it failed on me. I then tried asking Chat to do it and it did not. I need to figure out how to group these - it might have to be manually but I will do that for the next assignment. Overall it's clear that Democrats spent more paying their employees than Republicans, which is super interesting/fascinating/peculiar/I want to know why. 
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------
+
 
 
 
@@ -411,6 +464,12 @@ glimpse(summary_sod)
 6676 rows and five columns: organization, program, description, year-to-date amount, and quarter-to-date amount. 
 Similar limitations/flaws to the detailed one: timeframe, lots of different categories for "description," no party identifier. I was also seeing some negative numbers in the amounts columns which is weird. 
 
+
+
+
+
+
+This is where I did my initial work for this assignment, I pasted it above. 
 
 Rachel
 QUESTION: HOW DOES SPENDING VARY AMONG REPRESENTATIVES?
