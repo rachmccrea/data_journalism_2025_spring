@@ -117,7 +117,7 @@ ggplot() +
 
 
 ```
-It looks like there was a big gap between Hogan and Trump in Howard County, and a maller but still considerable gap in the rest of Central MD. Either Trump voters not voting for Hogan or Hogan voters not voting for Trump. Western MD has much less of a gap, so does Cecil County and Somerset. 
+It looks like there was a big gap between Hogan and Trump in Howard County, and a smaller but still considerable gap in the rest of Central MD. Either Trump voters weren't voting for Hogan or Hogan voters weren't voting for Trump. Western MD has much less of a gap, so do Cecil County and Somerset. 
 I think there's probably a better way to portray this data. It might be cool to make a bar chart with the percentage difference between the two, I think that could better convey the size of the difference in each county. 
 
 **Q3** Make another map showing the difference between Larry Hogan's county-level performance this year and from his governor race in 2018, using percentages to compare the two as you did in Q2. You can use the dataframe you initially loaded for Q1, and you'll need to load the 2018 governor results in the data folder and join them to it before proceeding. Are there any counties where Hogan did better this year? How would you describe the map showing the difference?
@@ -195,6 +195,6 @@ ggplot() +
   theme_minimal()
 
 ```
-Not sure what happened with Saint Mary's County, but the rest of the map is pretty interesting! I'd want to use it as a jumping-off point for a story about pro-choice Hogan voters -- how many of these pro-choice voters voted for Hogan? Do counties where Hogan won have a smaller percentage of pro-choice voters? Are there more pro-choice voters in counties Hogan lost? Would be interesting to explore, it would be a way of looking at how Marylanders feel about abortion, politics, polarization, etc. It seems like there are big differences among counties/regions of the state, I'd like to learn more about that/ 
+Not sure what happened with Saint Mary's County, but the rest of the map is pretty interesting! I'd want to use it as a jumping-off point for a story about pro-choice Hogan voters -- how many of these pro-choice voters voted for Hogan? Do counties where Hogan won have a smaller percentage of pro-choice voters? Are there more pro-choice voters in counties Hogan lost? Could  be interesting to explore, it would be a way of looking at how Marylanders feel about abortion, politics, polarization, etc. It seems like there are big differences among counties/regions of the state, I'd like to learn more about that. 
 
 -30-
