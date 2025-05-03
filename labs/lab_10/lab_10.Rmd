@@ -147,7 +147,7 @@ joined_senate_gov <- joined_senate_gov %>%
   group_by(GEOID) %>% 
   mutate(hogan18_total = sum(Hogan.x, Jealous, Quinn, Schlakman, `Write-ins`), hogansenate_total = sum(Hogan.y, Alsobrooks, Scott))
 #getting another error, consulting terp ai again. pasted my code like "here's what I'm trying to do, i get the error that it's an invalid character type". 
-#terp ai told me to add a pipe after group_by (lmao) and to use backticks instead of quotes around write-ins. seems to have worked!
+#terp ai told me to add a pipe after group_by and to use backticks instead of quotes around write-ins. seems to have worked!
 joined_senate_gov <- joined_senate_gov %>% 
   group_by(GEOID) %>% 
   mutate(hogan18_total = sum(Hogan.x, Jealous, Quinn, Schlakman, `Write-ins`), hogansenate_total = sum(Hogan.y, Alsobrooks, Scott)) %>% 
