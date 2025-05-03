@@ -1,0 +1,200 @@
+---
+title: "lab_10"
+author: "Derek Willis"
+date: "2024-11-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+-   the tidyverse, janitor and tigris libraries
+-   you might choose to use the tidycensus library for Q3
+
+## Load libraries and establish settings
+
+**Task** Create a codeblock and load appropriate packages and settings for this lab.
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load libraries
+library(tidyverse)
+library(janitor)
+library(tigris)
+library(tidycensus)
+
+```
+
+Let's explore the election results from last night and make some maps!
+
+## Questions
+
+**Q1.** Make a county-level map of Maryland's results for U.S. Senate using `md_senate_county_24.csv` in the data folder, calculating the difference between Angela Alsobrooks's percentage of the total votes and Larry Hogan's percentage of the total votes and displaying that percentage difference on the map. What is the story here, and what is the county with the most interesting results?
+
+**A1.**
+
+```{r}
+
+md_senate_county <- read_csv("data/md_senate_county_24.csv")
+
+glimpse(md_senate_county)
+
+pct_senate_county <- md_senate_county %>% 
+  group_by(County) %>% 
+  mutate(total = sum(Alsobrooks, Hogan, Scott)) %>% 
+  mutate(alsobrooks_pct = Alsobrooks/total, hogan_pct = Hogan/total, scott_pct = Scott/total) %>% 
+  mutate(alsobrooks_minus_hogan = alsobrooks_pct - hogan_pct)
+
+
+#taking this from the prelab bc it has geometry
+md_county_population <- get_acs(geography = "county",
+              variables = c(population = "B01001_001"),
+              state = "MD",
+              year = 2022,
+              geometry = TRUE)
+
+glimpse(md_county_population)
+glimpse(pct_senate_county)
+
+md_county_population <- md_county_population %>% 
+  mutate(GEOID = as.numeric(GEOID))
+pct_senate_county <- pct_senate_county %>% 
+  mutate(GEOID = as.numeric(GEOID))
+
+joined_pct_senate_county <- pct_senate_county %>% 
+  left_join(md_county_population)
+
+#ok yay now i have the data and the geometry. time to ggplot. 
+
+selected_joined_pct_senate_county <- joined_pct_senate_county %>% 
+  select(GEOID, County, alsobrooks_minus_hogan, geometry)
+glimpse(selected_joined_pct_senate_county)
+
+ggplot() +
+  geom_sf(data=selected_joined_pct_senate_county, aes(fill=alsobrooks_minus_hogan, geometry = geometry)) +
+  theme_minimal()
+
+#idk if this is how we were supposed to do it but that's a MAP RIGHT THERE
+
+```
+The story here is probably that there are counties that voted overwhelmingly for Hogan and counties that voted overwhelmingly for Alsobrooks. The highest percentage of Hogan voters were in Western MD, the Eastern Shore, and Carroll County. The highest percentage of Alsobrooks voters was in PG County and Baltimore City. The rest of the DC metro area also had big Alsobroks leads. The county with the most interesting results is probably Carroll County, because it had way more Hogan voters than surrounding counties. 
+
+**Q2.** Make a county-level map showing the difference between Donald Trump's county-level performance this year and Larry Hogan's, using percentages to compare the two as you did in Q1. You can use the dataframe you initially loaded for Q1, and you'll need to load the 2024 presidential results in the data folder and join them to it before proceeding. Are there any counties where Trump got a higher percentage than Hogan? How would you describe the map showing the Trump-Hogan difference?
+
+Also answer this: is a map the best way to present this data? What else could you make that might convey more information?
+
+**A2.**
+
+```{r}
+senate <- read_csv("data/md_senate_county_24.csv")
+
+president <- read_csv("data/md_pres_county_24.csv")
+
+sen_pres_join <- senate %>% 
+  left_join(president)
+
+sen_pres_join <- sen_pres_join %>% 
+  group_by(County) %>% 
+  mutate(sen_total = sum(Alsobrooks, Hogan, Scott), pres_total = sum(Harris, Trump, Oliver, Stein, Kennedy)) %>% 
+  mutate(hogan_pct = Hogan/sen_total, trump_pct = Trump/pres_total) %>% 
+  mutate(hogan_minus_trump = hogan_pct - trump_pct)
+
+sen_pres_join <- sen_pres_join %>% 
+  left_join(md_county_population)
+
+sen_pres_select <- sen_pres_join %>% 
+  select(GEOID, County, hogan_minus_trump, geometry)
+
+ggplot() +
+  geom_sf(data=sen_pres_select, aes(fill=hogan_minus_trump, geometry = geometry)) +
+  theme_minimal()
+
+
+
+```
+It looks like there was a big gap between Hogan and Trump in Howard County, and a maller but still considerable gap in the rest of Central MD. Either Trump voters not voting for Hogan or Hogan voters not voting for Trump. Western MD has much less of a gap, so does Cecil County and Somerset. 
+I think there's probably a better way to portray this data. It might be cool to make a bar chart with the percentage difference between the two, I think that could better convey the size of the difference in each county. 
+
+**Q3** Make another map showing the difference between Larry Hogan's county-level performance this year and from his governor race in 2018, using percentages to compare the two as you did in Q2. You can use the dataframe you initially loaded for Q1, and you'll need to load the 2018 governor results in the data folder and join them to it before proceeding. Are there any counties where Hogan did better this year? How would you describe the map showing the difference?
+
+**A3**
+
+```{r}
+gov_2018 <- read_csv("data/md_gov_county_18.csv")
+
+#joined_senate_gov <- gov_2018 %>% 
+  #left_join(md_senate_county, GEOID==GEOID)
+#having trouble with this join, keep getting the error message of 'object 'GEOID' not found'. Gonna ask terp ai. 
+
+joined_senate_gov <- gov_2018 %>% 
+  left_join(md_senate_county,  by="GEOID")
+#got this from terp ai, saw what i was doing wrong. 
+
+#hogan.x is gov 2018 and hogan.y is senate. 
+
+joined_senate_gov <- joined_senate_gov %>% 
+  left_join(md_county_population, by="GEOID")
+
+glimpse(joined_senate_gov)
+
+
+joined_senate_gov <- joined_senate_gov %>% 
+  group_by(GEOID) %>% 
+  mutate(hogan18_total = sum(Hogan.x, Jealous, Quinn, Schlakman, `Write-ins`), hogansenate_total = sum(Hogan.y, Alsobrooks, Scott))
+#getting another error, consulting terp ai again. pasted my code like "here's what I'm trying to do, i get the error that it's an invalid character type". 
+#terp ai told me to add a pipe after group_by (lmao) and to use backticks instead of quotes around write-ins. seems to have worked!
+joined_senate_gov <- joined_senate_gov %>% 
+  group_by(GEOID) %>% 
+  mutate(hogan18_total = sum(Hogan.x, Jealous, Quinn, Schlakman, `Write-ins`), hogansenate_total = sum(Hogan.y, Alsobrooks, Scott)) %>% 
+  mutate(hogan_18_pct = Hogan.x/hogan18_total, hogan_senate_pct = Hogan.y/hogansenate_total) %>% 
+  mutate(hogan18_minus_hogansenate = hogan_18_pct - hogan_senate_pct)
+
+ggplot() +
+  geom_sf(data=joined_senate_gov, aes(fill=hogan18_minus_hogansenate, geometry = geometry)) +
+  theme_minimal()
+
+
+
+```
+I might be interpreting this wrong, but it doesn't look like Hogan did better in any counties this year. Since I subtracted the Senate votes from the governor votes, the difference would be negative if he had done better in the more recent race. None of these are negative, so I think he performed worse in the Senate race than he did in the 2018 gov race. 
+
+**Q4.** Choose your own map adventure! In the data folder I've included Maryland county-level results for the abortion rights amendment vote this year, plus the 2020 presidential results by county and 2022 governor's results by county. Using one of those and at least one other contest for comparison, make a county-level map showing what you think is the most interesting aspect of that data, and describe the results in terms of a possible story. You can bring in other data, such as Census information, if you like.
+
+**A4.**
+
+I remember hearing conversations about Hogan's stance on abortion rights during the race, so I'm going to subtract the percentage of pro-choice voters in each county from the percentage of Hogan voters and see what that looks like. 
+
+```{r}
+
+abortion_24 <- read_csv("data/md_abortion_24.csv")
+
+abortion_24 <- abortion_24 %>% 
+  group_by(County) %>% 
+  mutate(total = sum(For, Against)) %>% 
+  mutate(pct_pro = For/total)
+
+joined_senate_abortion <- joined_senate_gov %>% 
+  left_join(abortion_24, join_by("County.x" == "County"))
+
+
+selected_joined_senate_abortion <- joined_senate_abortion %>% 
+  select(GEOID, County.x, hogan_senate_pct, pct_pro, geometry)
+
+selected_joined_senate_abortion <- selected_joined_senate_abortion %>% 
+  mutate(hogan_minus_prochoice = hogan_senate_pct - pct_pro)
+
+view(selected_joined_senate_abortion)
+
+ggplot() +
+  geom_sf(data=selected_joined_senate_abortion, aes(fill=hogan_minus_prochoice, geometry = geometry)) +
+  theme_minimal()
+
+```
+Not sure what happened with Saint Mary's County, but the rest of the map is pretty interesting! I'd want to use it as a jumping-off point for a story about pro-choice Hogan voters -- how many of these pro-choice voters voted for Hogan? Do counties where Hogan won have a smaller percentage of pro-choice voters? Are there more pro-choice voters in counties Hogan lost? Would be interesting to explore, it would be a way of looking at how Marylanders feel about abortion, politics, polarization, etc. It seems like there are big differences among counties/regions of the state, I'd like to learn more about that/ 
+
+-30-

@@ -1,0 +1,511 @@
+---
+title: "data_analysis"
+author: "Rachel McCrea"
+date: "2025-04-25"
+output: html_document
+---
+```{r load-packages}
+options(scipen=999)
+library(tidyverse)  
+library(knitr)      
+library(lubridate) 
+library(janitor)
+library(ggplot2)
+library(ggrepel)
+```
+
+Something weird happened w my file when I zipped it (wouldn't let me save) so I'm copying what I have from what I was working on and trying to save again. ok it worked. here we go. 
+
+
+```{r}
+detail_sod <- read_csv("detail_sod.csv")
+```
+cleaning/analyzing base data: Fiona
+```{r}
+# Load required data
+# Path to data should be loaded from folder "data" i.e. read_csv("data/name_of_data.csv")
+# Clean required data and prepare for analysis if needed. 
+transactions <- read_csv("detail_sod.csv")
+summary <- read_csv("summary_sod.csv")
+
+```
+
+---cleaning transaction data---
+
+```{r}
+##cleaning transactions data##
+transactions <- transactions |>
+  mutate(TRANSACTION_DATE=dmy(TRANSACTION_DATE))
+
+```
+
+```{r}
+##cleaning transactions data##
+transactions <- transactions |>
+  mutate(PERFORM_START_DT=dmy(PERFORM_START_DT))
+
+```
+
+```{r}
+##cleaning transactions data##
+transactions <- transactions |>
+  mutate(PERFORM_END_DT=dmy(PERFORM_END_DT))
+
+```
+
+```{r}
+##reading data quickly##
+write_csv(transactions, "transactions.csv")
+
+```
+
+```{r}
+##replacing spaces; provided by Ryan##
+transactions |>
+  mutate(DESCRIPTION = trimws(DESCRIPTION)) |>
+  mutate(DESCRIPTION = str_replace_all(DESCRIPTION, "\\s+", " "))
+
+```
+
+```{r}
+transactions <- read_csv("transactions.csv")
+
+glimpse(transactions)
+```
+
+```{r}
+##further cleaning data but figuring out what columns have preexisting issues due to a lack of og data provided by the expenditure data##
+#group/counts every column in input dataframe##
+grouper <- function(input_df, group_by_column, new_column_name = "n()"){
+  output_df <- input_df %>%
+    group_by(.data[[group_by_column]]) %>%
+    summarise(temp_count = n()) %>%
+    mutate(percent = temp_count/sum(temp_count)*100) %>%
+    arrange(desc(percent)) %>%
+    rename(!!new_column_name := temp_count)
+  return(output_df)
+}
+
+
+group_count <- function(input_df, group_column_name='n()', state_filter=NA, start_col = 1){
+  column_names <- colnames(input_df)
+  if(!is.na(state_filter)){
+    input_df <- input_df %>%
+      filter(state == state_filter)
+  }
+  for (column in column_names[start_col:length(column_names)]){
+    output <- grouper(input_df, column, group_column_name)
+    print(output)
+  }
+}
+
+group_count(transactions)
+
+```
+Transactions Details brief information: 
+- Rows: 129,843
+- Columns: 18
+- Organization: name of gvpt office or department that is having the service done for them
+   (Data is showing basically what we expected: the largest portions of organizations correlated with transactions are those that are large and encompassing [as in organizations that contain more than one person])
+   (top organization is FISCAL YEAR 2025 GOVERNMENT CONTRIBUTIONS [the general funds that allow programs, benefits, and organizations to run; very unsurprising that this is top])
+  (the second organization with the largest number of expenditure entries is FISCAL YEAR 2024 CHIEF ADMIN OFCR OF THE HOUSE [which makes the most sense as the chief officer's job is literally to control the fiscal transactions/budgeting/payroll/tech/admin etc.; most everything major has to go through them])
+  (the third organization with the largest number of expenditure entries is FISCAL YEAR 2025 CHIEF ADMIN OFCR OF THE HOUSE [which makes the most sense as the chief officer's job is literally to control the fiscal transactions/budgeting/payroll/tech/admin etc.; most everything major has to go through them])
+  (and most all else of the organizations are pretty much single people, which makes sense as to why they have lesser numbers of individual transactions --> could be interesting to parse through and see who had most/least and then do outside digging to see what it was for/why etc. *easily use this to supplement our search for one of our questions pertaining to who had largest individual expenditure contribs)
+  (also really interesting --> have committee orgs and caucus orgs which would be really interesting to dive into to parse through where they are spending their money during 2025 Q1; could also be a way into deciding party affiliations for this data; would be more work, but worth it)
+
+- fiscal_year_or_legislative_year: the fiscal/legislative year that the transaction occurred
+  (will definitely need to look at as there is both holdover expenses in fiscal year 2025 Q1 from fiscal year 2024 [various quarters], and this is necessary to know as we are focusing our data analysis mostly on fiscal year 2025; need to be aware if the data we are looking at pertains to the correct year)
+  (really interesting though that the LEGISLATIVE year of 2024 is the top recipient, the fiscal year of 2025 is the second, and the fiscal year of 2024 is third; we might look into this as well as it's interesting to see the difference between legislative and fiscal year and what that means for expenditure data)
+
+- organization_code: internal code that is used to make unique identification for each specific organization --> more organized records
+ (basic organizational, record keeping information, most likely will not touch)
+  (but is interesting that NA is the top recipient, what might that mean that the top code is something that isn't even directly classified?)
+
+- program: name of the program/spending category that is associated with each transaction
+  (there are less variation with assigning a program to these transactions in the summary data than we thought there would be, but it makes sense as it's a primarily organizational column to help keep track of types of expenditure entries)
+  (most common are official expenses of members, intern allowances, general expenditures, and gvpt contributions)
+  (could maybe be worth it to see which organizations are spending the most on which of these top four programs, might lead to some interesting data, but probably won't be something we explicitly focus on)
+
+- program_code: short code representing each type of program possible for each transaction (used sorting/grouping)
+  (basic organizational, record keeping information, most likely will not touch)
+  (but is interesting that Other is the top recipient, what might that mean that the top code is something that isn't even directly classified?)
+
+- sort_subtotal_description: expense type or the category (classify the type of expense in general terms)
+  (we will most likely use this as it is a great indicator/descriptor of what each expenditure was)
+  (not super surprising that travel, supplies, rent, and personal compensation were the top four, but it would be interesting to reverse analyze and see which vendors and organizations received the most expenditures of these top subtotal descriptions)
+
+- budget_object_class: numeric code representing broad classification of spending (easier quantifiable spending organization)
+  (don't think we will use this at this moment, included for record keeping and organizational purposes, and not necessary for our analysis at this moment in time)
+
+- sort_sequence: how the data/each transaction should be sorted for record keeping
+  (super simple assist for how to organize/record keep transactions; most likely will not use, if not just ignore)
+
+- transaction_date: actual date of when each transaction was recorded/written down
+  (we will definitely be using this in our data analysis just like the perform start and end date)
+  (the top contender, surprise surprise, is NA --> negligence? mistake? anonymous, and if so what does this mean for US house of reps expenditures? )
+  (besides that, why is 10/16 the second most popular transaction date? what was going on that day that so many were passed?)
+
+- data_source: the source of the transaction information
+  (only useful for if we need to fact check the information and see if its correct/why its there/why its not there etc.)
+
+- document: identifier/code (invoice, reference number, another quantifiable record)
+  (just useful if we need to cross-reference, track something)
+  (top contender is NA --> negligence? mistake? anonymous, and if so what does this mean for US house of reps expenditures?)
+
+- vendor_name: name of the vendor that paid for the transaction
+  (super vital in answering our questions as we need to know the names of the people seeking the expenditures for these organizations and for these specific reasons)
+  (can see bank info, specific committee information as to who has most expenditures out [dept of education is first dept], which departments, insurance companies, mail, and just businesses in general among a lot of other groups)
+  (would be great for comparing and contrasting, and finding out where expenditure priorities laid in q1)
+  (also want to know why the number one vendor was literally NA --> negligence? mistake? anonymous, and if so what does this mean for US house of reps expenditures?)
+
+- vendor_id: unique identifier for each individual vendor (helps to track different names)
+  (most likely won't even touch this because the numbers aren't needed when you have the vender name who made the transaction anyways)
+  (most likely will only touch this if the vendor name is left blank/empty/NA for one reason or another for cross-referencing purposes only; but unlikely we will need to touch it)
+
+- perform_start_dt: start date of the service period the expense applies to
+  (very useful for our data analysis, will help with answering our questions and specifying some of our findings; like why some days had the most transactions over others, was this pertaining to election expenditures etc.)
+  (not surprising that top start date is the first of fiscal year and quarter 1)
+
+- perform_end_dt: end date of the service period
+  (very useful for our data analysis, will help with answering our questions and specifying some of our findings; like why some days had the most transactions over others, was this pertaining to election expenditures etc.)
+  (lol not very surprised at all that the top perform_end_dt is the last day of year and last day of quarter 1; rushing to push expenditures to a close; could be worth wile for someone to parse through this data and see just which expenditures were being pushed through last minute)
+
+- description: explanation describing type of transaction
+  (we will most definitely be looking into description types as it give some of the most detailed information in this dataset)
+  (for example, not surprising that meals and travel are the top repeat contenders for expenditure entries, but we could use this to see which vendors are paying for it the most and what that might imply for quarter1, and maybe [although don't know how likely] election campaign events/etc.)
+
+- budget_object_code: helps map specific line items in budgeting
+  (don't think we will use this at this moment, it does not seem relevant/necessary for our data analysis nor our pre-established questions we are seeking to answer)
+  (but will be kept in mind if it could provide fill-in-the-blank answers for the parts of the data that just aren't up to par/filled in)
+  (might be interesting, if the need arises to fill in blank with this type of data, to see which code is used the most and if that supplements our other data analysis for conformation that we are on right track etc.)
+  (might want to look into, however, why one of the top five most used codes is NA and what that might mean about this data's contents/consistency)
+  
+- amount: monetary amount of each transaction
+  (we are definitely going to use this, as this is the [for lack of better words] money maker of our data analysis)
+  (really interesting right off the bat that the most reoccurring expenditure amount is $833.00 exactly --> we looked it up and the description says that it is for student loan payments; could be very worth our while/interesting to see in what way is this pertaining to student loans, and why they are all the same amount [max payment for a timely loan, min? are these related to federal provision of loan money to students or students paying back their loans? etc.])
+  
+----------------------------------------------------------------------------------------------------
+- Obvious limitations/flaws?: 
+  There are countless limitations and flaws in this data. Namely, there are so many, across all rows and columns, blank boxes/NA's where data is missing; just not there. The raw data just never included this information, and had no explanation for as to why it is not there. Could it have been by mistake? Was there a record keeping issue? Was it on purpose? Does this signify anonymous expenditures by the US federal government? Something else? We don't know, and we can hardly figure it out. Dates, vendors, organizations and a bunch of other columns all suffer heavy hits from this lack of proper data provision by the US House of Representatives record keeping. This will most definitively impact our ability to make correct, thorough, and fact-checked data analysis as the lack of data does not provide confidence, nor the full picture, that the data is correct in the first place if it is not even fully there as it should be. As we discussed, we will do our best with the data that is here, read between what lines are still drawn, but will walk through the process to tell the best story with what isn't and is there. When possible, we will attempt to explain possible margin of error (if it can even be deduced, whether numerically or just verbally based on educated guesses). Outside research might help, but it is not able to supplement, nor make up and fix the just general lack of data from the raw csv's we obtained straight from the House of Representatives web source. 
+
+- Limits in terms of time frame (what is or isn't included in the code/information that might be needed later on):
+    Besides the data that is missing all over the csv that we would love to have to make our analysis more complete and comprehensive, some information that would have been great to have included in this dataframe would be directly stating party affiliations when applicable. This would largely help make a more diverse data analysis across party priorities rather than just focusing on whole departments, committees, organizations etc. and then doing even more research attempting to figure out if there is a party-pushing motive or not (if that can even be gleaned). Other than that (lack of original data and party affiliation), this dataset has a decent amount of info from our first glance. Something else might pop up later, and if it does, we shall record it as a limit. 
+
+
+---cleaning summary data---
+
+```{r}
+##brief analysis of summary data##
+glimpse(summary)
+
+```
+
+```{r}
+##further cleaning data but figuring out what columns have preexisting issues due to a lack of og data provided by the expenditure data##
+#group/counts every column in input dataframe##
+group_count <- function(input_df, group_column_name='n()', state_filter=NA, start_col = 1){
+  column_names <- colnames(input_df)
+  if(!is.na(state_filter)){
+    input_df <- input_df %>%
+      filter(state == state_filter)
+  }
+  for (column in column_names[start_col:length(column_names)]){
+    output <- grouper(input_df, column, group_column_name)
+    print(output)
+  }
+}
+
+group_count(summary)
+
+```
+
+Summary brief information:
+- Rows: 6,676
+- Columns: 5
+- organization: name of gvpt office or department that is having the service done for them
+  (Data is showing basically what we expected: the largest portions of organizations correlated with transactions are those that are large and encompassing [as in organizations that contain more than one person])
+  (the top organization with the largest number of expenditure entries is FISCAL YEAR 2025 CHIEF ADMIN OFCR OF THE HOUSE [which makes the most sense as the chief officer's job is literally to control the fiscal transactions/budgeting/payroll/tech/admin etc.; most everything major has to go through them])
+  (second organization with most number of expenditures is FISCAL YEAR 2025 SERGEANT AT ARMS [responsible for security/safety, protocol, order. modernization, workforce development, etc.])
+  (third largest is the FISCAL YEAR 2025 CLERK OF THE HOUSE [managing legislative process and admin functions house of reps])
+  (and most all else of the organizations are pretty much single people, which makes sense as to why they have lesser numbers of individual transactions --> could be interesting to parse through and see who had most/least and then do outside digging to see what it was for/why etc. *easily use this to supplement our search for one of our questions pertaining to who had largest individual expenditure contribs)
+  (also really interesting --> have committee orgs and caucus orgs which would be really interesting to dive into to parse through where they are spending their money during 2025 Q1; could also be a way into deciding party affiliations for this data; would be more work, but worth it)
+  
+- program: name of the program/spending category that is associated with each transaction
+  (there are less variation with assigning a program to these transactions in the summary data than we thought there would be, but it makes sense as it's a primarily organizational column to help keep track of types of expenditure entries)
+  (most common are official expenses of members, intern allowances, general expenditures, and salaries officers and employees)
+  (could maybe be worth it to see which organizations are spending the most on which of these top four programs, might lead to some interesting data, but probably won't be something we explicitly focus on)
+  
+- description: explanation describing type of transaction
+  (these are just additional details to categorize the program identity of each expenditure)
+  (could be useful for supplementary information, but most likely will not be super necessary for us, or helpful, but as always, not a bad idea to keep in mind)
+  (for example, the top was office totals: what does this mean/entail/include, how would we figure out this data etc.)
+  
+- ytd_amount: year-to-date amount; cumulative total spending for a program/vendor/category from the beginning of the fiscal YEAR up to the current date
+  (shows how much money spend so far in the fiscal year; but this being the beginning of fiscal year 2025, not a whole lot to track yet, esp. b/c this data doesn't have associations with dates like the transaction details do)
+  (however, like transaction details this might possible contain information pertaining to ongoing/lingering transactions/expenditures from fiscal 2024 which might be worth using this data and looking into it; would need to have a clarified question and way to look at and use it though it seems)
+  
+- qtd_amount: quarter-to-date; cumulative total spending from beginning of current fiscal QUARTER to the current date
+  (the amount of money spent during this specific fiscal quarter --> fiscal year 2025, Q1)
+  (however, like transaction details this might possible contain information pertaining to ongoing/lingering transactions/expenditures from fiscal 2024 which might be worth using this data and looking into it; would need to have a clarified question and way to look at and use it though it seems)
+---------------------------------------------------------------------------------------------------------
+
+  (2024 fiscal year begins oct 1. 2023, ends sept 30 2024)
+  (quarter one: oct 1, 2023 - dec 31, 2023)
+  (quarter two: jan 1, 2024 - march 31, 2024)
+  (quarter three: april 1, 2024 - june 30, 2024)
+  (quarter four: july 1, 2024 - spet 30, 2024)
+  
+  (2025 fiscal year begins oct 1. 2024, ends spet 30, 2025)
+  (quarter one: oct 1, 2024 - dec 31, 2024)
+  (quarter two: jan 1, 2025 - march 31, 2025)
+  (quarter three: april 1, 2025 - june 30, 2025)
+  (quarter four: july 1, 2025 - spet 30, 2025)
+  
+**we are currently in fiscal 2025, quarter three in real time
+
+**this data set contains all information pertaining to fiscal year 2025, Q1!!
+
+(SOD published quarterly --> usually 60 days after end of each calender quarter: next report covering Q2 should be coming our EOM May)
+------------------------------------------------------------------------------------------------------
+- Obvious limitations/flaws?: 
+  All in all, this dataset, for what it is meant to contain, is very well done. No cleaning had to be done for this dataframe, there were no blank rows/columns and/or random NA's in any of the boxes. The data is straightforward, organized and as detailed as we believe it could be for a brief summary of all expenditure data received in this specific quarter. As such, it was easy to parse through and find information that it contained in order to pull it out and work with analyzing it. Although one thing that did stick out was there were a few negative ytd and qtd numbers and it is not quite explained what that might mean. We are guessing as of right now that it might mean instead of spending, it was money donated for that cause. However, we don't, at this moment, necessary think we are going to focus on this information so it might not even be relevant, but it is something we are keeping in mind when doing our data analysis.
+
+- Limits in terms of timeframe (what is or isn't included in the code/information that might be needed later on): 
+  The three major aspects that aren't included in this dataset that would be very useful to have for data analysis are: more specific descriptions, specific dates of each transaction, and party affiliation linked to the individual organization names listed. However, it makes sense why the dates wouldn't be included in this as these are summaries of entire organizations entire quarter one total expenditures. On the other hand, if the descriptions were just a little bit more descriptive I think that this data would be a lot more insightful (there is only so much someone can understand about what it means for an organization to spend possibly hundreds of thousands of dollars on supplies and materials [what materials are these, what encompass this, are there limits etc.]). And lastly, it would just make our lives a lot easier if there were party affiliations tied to each of the individual organizations for ease of analyzing party priorities, but this seems like something this data is going to make us look up and assign/figure out one by one.
+
+-------------------------------------------------------------------------------------------------------
+
+Rachel
+QUESTION: HOW DOES SPENDING VARY AMONG REPRESENTATIVES?
+I've got a bar chart of the highest and lowest spending reps, some summary stats, and a very rough draft of a normal distribution graphic. 
+Findings: spending varies significantly among representatives, with some spending well over 6 million and some spending under 500K. Most of the spending was somewhere between 4 and 6 million dollars. The highest spender was apparently the governor of Puerto Rico and the lowest spender was a GOP rep from Wisconsin. 
+
+```{r}
+
+#READING IN THE DATA, GROUP_BY AND SUMMARIZE
+
+summary_sod <- read_csv("summary_sod.csv")
+
+grouped_by_org <- summary_sod %>% 
+  group_by(ORGANIZATION) %>% 
+  summarize(sum = sum(YTD_AMOUNT)) %>% 
+  arrange(desc(sum))
+
+grouped_by_org %>% 
+  clean_names()
+
+#FILTERING FOR THE HIGHEST AND LOWEST SPENDERS
+
+highest_lowest_spenders <- grouped_by_org %>% 
+  filter(ORGANIZATION %in% c('2024 HON. JENNIFFER GONZALEZ-COLON','2024 HON. ALEXANDER X. MOONEY','2024 HON. MATT CARTWRIGHT','2024 HON. JEFFERSON VAN DREW','2024 HON. ADAM B. SCHIFF','2024 HON. TONY WIED','2024 HON. 3RD DISTRICT OF NEW YORK','2024 HON. ERICA LEE CARTER','2024 HON. LAMONICA MCIVER','2024 HON. BRIAN HIGGINS'))
+
+#mira helped figure out the filtering using the c() stuff!
+
+#PUTTING TOGETHER THE BAR CHART
+
+#I couldn't figure out how to get the organization names to go at an angle instead of overlapping, so I asked chat. 
+#here's what I had before (mira was helping me with the element_text but it didn't work)
+#highest_lowest_spenders %>% 
+ # ggplot() + 
+ # geom_bar(aes(x = ORGANIZATION, weight = sum)) +
+ # theme(
+   # element_text(angle = 45)) 
+#and here's what chat gave me: 
+#highest_lowest_spenders %>% 
+ # ggplot() + 
+ # geom_bar(aes(x = ORGANIZATION, weight = sum)) +
+ # theme(
+   # axis.text.x = element_text(angle = 45, hjust = 1)
+ # )
+
+#What I ended up with: 
+highest_lowest_spenders %>% 
+  ggplot() + 
+  geom_bar(aes(x = ORGANIZATION, weight = sum)) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  labs(
+    title="Highest vs. Lowest-Spending Represenatives", 
+    x="Representative Offices",
+    y="Spending"
+  )
+
+
+#SUMMARY STATS FOR ALL THE REPS 
+
+#went into excel, deleted everything that wasn't a rep's office, including leadership offices. i feel like their budgets might be huge, but we can come back and look at that once we look at normal members of the house.
+#ended up making a new excel spreadsheet because the old one had a bunch of empty rows at the bottom when I read it back in. 
+write_csv(grouped_by_org, file = "grouped_by_org.csv")
+grouped_by_reps <- read_csv("grouped_by_reps.csv")
+
+grouped_by_reps %>% 
+  summarize(mean = mean(sum), median = median(sum), max = max(sum), min = min(sum), sd = sd(sum))
+#got the summary stats! not sure about the standard deviation, though. 
+
+
+#NORMAL DISTRIBUTION
+
+#first try: 
+grouped_by_reps %>% 
+  ggplot()+
+  geom_bar(aes(x = ORGANIZATION, weight = sum))
+#YIKES 
+
+#time to search thru assignments to find normal distribution ggplot
+#can't find it. asking terpai how to do a normal distribution in ggplot.
+#terpai gave me a bunch of stuff that didn't work. gave it the code I have and it pointed me in the right direction -- I was using organization instead of count
+#here's the code terp AI gave me, I put "sum" in for x and changed the title and x label. 
+# Example assuming 'value' is the numeric variable you want to plot
+grouped_by_reps %>% 
+  ggplot(aes(x = sum)) +  # Replace 'value' with your numeric variable
+  geom_histogram(aes(y =..density..), bins = 30, fill = "lightblue", color = "black") +
+  stat_function(fun = dnorm, args = list(mean = mean(grouped_by_reps$value, na.rm = TRUE), 
+                                          sd = sd(grouped_by_reps$value, na.rm = TRUE)), 
+                color = "red", size = 1) +
+  labs(title = "Representative Spending", x = "$", y = "Density") +
+  theme_minimal()
+#YOOOO THANKS CHAT 
+
+```
+
+
+
+
+
+
+```{r}
+detail_sod <- read_csv("detail_sod.csv")
+```
+#fixing dates
+```{r}
+detail_sod <- detail_sod %>% 
+  mutate(TRANSACTION_DATE=dmy(TRANSACTION_DATE))
+```
+```{r}
+ detail_sod <- detail_sod %>% 
+  mutate(PERFORM_START_DT=dmy(PERFORM_START_DT))
+```
+```{r}
+detail_sod <- detail_sod %>% 
+  mutate(PERFORM_END_DT=dmy(PERFORM_END_DT))
+```
+```{r}
+write_csv(detail_sod, "detail_sod_clean.csv")
+```
+
+
+```{r}
+detail_sod_clean <- read_csv("detail_sod_clean.csv")
+
+glimpse(detail_sod_clean)
+```
+129,843 rows, 18 columns including dates of transactions, which office spent the money, the description of the transaction, and the amount. 
+Limitations/flaws: No party column, which would have been handy if we wanted to look at differences in spending between parties. I bet it's also hard to group by "description" because there are so many different kinds of spending listed, and "legislative planning food and beverage" is different from "food and beverage". The limited timeframe could also be an issue. 
+
+```{r}
+summary_sod <- read_csv("summary_sod.csv")
+
+glimpse(summary_sod)
+```
+6676 rows and five columns: organization, program, description, year-to-date amount, and quarter-to-date amount. 
+Similar limitations/flaws to the detailed one: timeframe, lots of different categories for "description," no party identifier. I was also seeing some negative numbers in the amounts columns which is weird. 
+
+
+Rachel
+QUESTION: HOW DOES SPENDING VARY AMONG REPRESENTATIVES?
+I've got a bar chart of the highest and lowest spending reps, some summary stats, and a very rough draft of a normal distribution graphic. 
+Findings: spending varies significantly among representatives, with some spending well over 6 million and some spending under 500K. Most of the spending was somewhere between 4 and 6 million dollars. The highest spender was apparently the governor of Puerto Rico and the lowest spender was a GOP rep from Wisconsin. 
+
+```{r}
+
+#READING IN THE DATA, GROUP_BY AND SUMMARIZE
+
+summary_sod <- read_csv("summary_sod.csv")
+
+grouped_by_org <- summary_sod %>% 
+  group_by(ORGANIZATION) %>% 
+  summarize(sum = sum(YTD_AMOUNT)) %>% 
+  arrange(desc(sum))
+
+grouped_by_org %>% 
+  clean_names()
+
+#FILTERING FOR THE HIGHEST AND LOWEST SPENDERS
+
+highest_lowest_spenders <- grouped_by_org %>% 
+  filter(ORGANIZATION %in% c('2024 HON. JENNIFFER GONZALEZ-COLON','2024 HON. ALEXANDER X. MOONEY','2024 HON. MATT CARTWRIGHT','2024 HON. JEFFERSON VAN DREW','2024 HON. ADAM B. SCHIFF','2024 HON. TONY WIED','2024 HON. 3RD DISTRICT OF NEW YORK','2024 HON. ERICA LEE CARTER','2024 HON. LAMONICA MCIVER','2024 HON. BRIAN HIGGINS'))
+
+#mira helped figure out the filtering using the c() stuff!
+
+#PUTTING TOGETHER THE BAR CHART
+
+#I couldn't figure out how to get the organization names to go at an angle instead of overlapping, so I asked chat. 
+#here's what I had before (mira was helping me with the element_text but it didn't work)
+#highest_lowest_spenders %>% 
+ # ggplot() + 
+ # geom_bar(aes(x = ORGANIZATION, weight = sum)) +
+ # theme(
+   # element_text(angle = 45)) 
+#and here's what chat gave me: 
+#highest_lowest_spenders %>% 
+ # ggplot() + 
+ # geom_bar(aes(x = ORGANIZATION, weight = sum)) +
+ # theme(
+   # axis.text.x = element_text(angle = 45, hjust = 1)
+ # )
+
+#What I ended up with: 
+highest_lowest_spenders %>% 
+  ggplot() + 
+  geom_bar(aes(x = ORGANIZATION, weight = sum)) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  labs(
+    title="Highest vs. Lowest-Spending Represenatives", 
+    x="Representative Offices",
+    y="Spending"
+  )
+
+
+#SUMMARY STATS FOR ALL THE REPS 
+
+#went into excel, deleted everything that wasn't a rep's office, including leadership offices. i feel like their budgets might be huge, but we can come back and look at that once we look at normal members of the house.
+#ended up making a new excel spreadsheet because the old one had a bunch of empty rows at the bottom when I read it back in. 
+write_csv(grouped_by_org, file = "grouped_by_org.csv")
+grouped_by_reps <- read_csv("grouped_by_reps.csv")
+
+grouped_by_reps %>% 
+  summarize(mean = mean(sum), median = median(sum), max = max(sum), min = min(sum), sd = sd(sum))
+#got the summary stats! not sure about the standard deviation, though. 
+
+
+#NORMAL DISTRIBUTION
+
+#first try: 
+grouped_by_reps %>% 
+  ggplot()+
+  geom_bar(aes(x = ORGANIZATION, weight = sum))
+#YIKES 
+
+#time to search thru assignments to find normal distribution ggplot
+#can't find it. asking terpai how to do a normal distribution in ggplot.
+#terpai gave me a bunch of stuff that didn't work. gave it the code I have and it pointed me in the right direction -- I was using organization instead of count
+#here's the code terp AI gave me, I put "sum" in for x and changed the title and x label. 
+# Example assuming 'value' is the numeric variable you want to plot
+grouped_by_reps %>% 
+  ggplot(aes(x = sum)) +  # Replace 'value' with your numeric variable
+  geom_histogram(aes(y =..density..), bins = 30, fill = "lightblue", color = "black") +
+  stat_function(fun = dnorm, args = list(mean = mean(grouped_by_reps$value, na.rm = TRUE), 
+                                          sd = sd(grouped_by_reps$value, na.rm = TRUE)), 
+                color = "red", size = 1) +
+  labs(title = "Representative Spending", x = "$", y = "Density") +
+  theme_minimal()
+#YOOOO THANKS CHAT 
+
+```
+
+
+
+
