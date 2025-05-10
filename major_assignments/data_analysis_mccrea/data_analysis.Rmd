@@ -14,11 +14,164 @@ library(ggplot2)
 library(ggrepel)
 ```
 
+
+
+
+RACHEL: Has House of Reps spending changed since the 2016 Brookings article? 
+HEY RACHEL REMEMBER TO HAVE THE DIRTY AND CLEAN DATASETS FOR YOUR OTHER QUESTION AND EXPLAIN WHAT YOU DID WITH THEM! 
+MAKE SURE RUN ALL WORK BEFORE SUBMITTING 
+
+The 2016 Brookings article (link = "https://www.brookings.edu/articles/a-look-at-spending-in-the-house-of-representatives/") details House of Reps spending for 2015. Among other analyses, they took a look at House spending by office type and House spending by category. By recreating their analysis for the data we have, which covers 2024 and the first quarter of 2025, we can take a look at how House spending has or hasn't changed in the last decade or so. 
+
+Brookings found that over half of House spending was from personal offices. The second-biggest spending chunk came from "other" (which I interpreted as offices like the sergeant at arms, House clerk, etc), followed by committees, and then a small portion of spending came from leadership offices. To recreate their findings for our data, I used case_when to label each office as "leadership," "committee," "other," or "personal." Then, I ran group_by and summarize to get the sum for each type of office, then calculated the percentage each office type was of total spending. 
+I found that spending from personal offices made up about 70% of spending, the vast majority. Next up was committee spending at ~16%, then "other" at ~12%, and finally leadership spending at 2.3%. Looking at the data visualization from Brookings, it seems that personal office spending made up a larger percentage of total spending than it did in 2016, and so did committee spending. Spending from "other" offices/orgs dropped, while leadership spending remained a small percentage of the total. 
+Brookings's second finding was that "personnel compensation" made up over three-quarters of spending by category. I recreated their analysis to the best of my ability, and got different results for our data. I used group_by and summarize for both our summary .csv and our detail .csv. Grouping by "program" for the summary seemed too vague when I ran that code, so I used "description" next. "Office totals" equaled $1.1 billion (an increase from Brookings's conclusion that total House spending equaled 1.05b in 2015, excluding member salaries), and the highest spending was in the Personnel Compensation category. That's similar to Brookings's finding that compensation was the highest spending category. 
+I ran similar code for our detail .csv, and got different results. In this dataset, "equipment" was the highest spending category (over 712 million dollars) and compensation was the second-highest (640 million). 
+It's hard to come to a conclusion on how this stacks up to Brookings's findings because our two datasets are telling us different things, but personnel compensation was still the highest or second-highest spending category in 2024-2025. That's similar to 2016 spending in the House. 
+
+```{r}
+
+summary_sod <- read_csv("summary_sod.csv")
+detail_sod <- read_csv("detail_sod.csv")
+
+
+#house spending by office type 
+
+office_type_summary <- summary_sod %>% 
+ mutate(office_type = case_when(
+    ORGANIZATION == "2024 OFFICE OF THE SPEAKER" ~ "leadership",
+    ORGANIZATION == "2024 OFFICE OF THE MAJORITY LEADER" ~ "leadership",
+    ORGANIZATION == "2024 OFFICE OF THE MINORITY LEADER" ~ "leadership",
+    ORGANIZATION == "2024 OFFICE OF THE MAJORITY WHIP" ~ "leadership",
+    ORGANIZATION == "2024 OFFICE OF THE MINORITY WHIP" ~ "leadership",
+    ORGANIZATION == "2024 DEMOCRATIC CAUCUS" ~ "other", 
+    ORGANIZATION == "2024 REPUBLICAN CONFERENCE" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 CHIEF ADMIN OFCR OF THE HOUSE" ~ "other", 
+    ORGANIZATION == "FISCAL YEAR 2025 WHISTLEBLOWER OMBUDS" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 CLERK OF THE HOUSE" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 OFFICE OF GENERAL COUNSEL" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 SERGEANT AT ARMS" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 OFFICE OF THE PARLIAMENTARIAN" ~ "other", 
+    ORGANIZATION == "FISCAL YEAR 2025 COMPILATION OF PRECEDENTS" ~ "other", 
+    ORGANIZATION == "FISCAL YEAR 2025 TECHNICAL ASSISTANTS" ~ "other", 
+    ORGANIZATION == "FISCAL YEAR 2025 OFFICE OF INSPECTOR GENERAL" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 LAW REVISION COUNSEL" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 LEGISLATIVE COUNSEL" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 INTERPARLIAMENTARY AFFAIRS" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 CLERK OF THE HOUSE" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 CAO MEMBER EQUIPMENT PROGRAM" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 NEW MEMBER ORIENTATION" ~ "other",
+    ORGANIZATION == "2024 ASIAN PACIFIC AMERICAN CAUCUS" ~ "other", 
+    ORGANIZATION == "2024 CONGRESSIONAL BLACK CAUCUS" ~ "other", 
+    ORGANIZATION == "2024 CONGRESSIONAL HISPANIC CAUCUS" ~ "other", 
+    ORGANIZATION == "2024 CONGRESSIONAL PROCHOICE CAUCUS" ~ "other",
+    ORGANIZATION == "2024 CONGRESSIONAL PROGRESSIVE CAUCUS" ~ "other",
+    ORGANIZATION == "2024 CONGRESSIONAL WESTERN CAUCUS" ~ "other",
+    ORGANIZATION == "2024 DEMOCRATIC WOMENS CAUCUS" ~ "other",
+    ORGANIZATION == "2024 EQUALITY CAUCUS" ~ "other",
+    ORGANIZATION == "2024 NEW DEMOCRAT COALITION" ~ "other",
+    ORGANIZATION == "2024 PROBLEM SOLVERS CAUCUS" ~ "other",
+    ORGANIZATION == "2024 REPUBLICAN MAIN STREET CAUCUS" ~ "other",
+    ORGANIZATION == "2024 REPUBLICAN STUDY COMMITTEE" ~ "other",
+    ORGANIZATION == "2024 SUSTAINABLE ENERGY & ENVIRONMENT" ~ "other",
+    ORGANIZATION == "2024 VALUE ACTIONS TEAM" ~ "other", 
+    ORGANIZATION == "2024 OTHER ADMINISTRATION" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 COMMITTEE ON APPROPRIATIONS" ~ "committee", 
+    ORGANIZATION == "2024 COMMITTEE ON BUDGET" ~ "committee",
+    ORGANIZATION == "2024 COMMITTEE ON AGRICULTURE" ~ "committee",
+    ORGANIZATION == "2024 ARMED SERVICES COMMITTEE" ~ "committee",
+    ORGANIZATION == "2024 COMMITTEE ON FINANCIAL SERVICES" ~ "committee",
+    ORGANIZATION == "2024 COMMITTEE ON EDUCATION AND WORKFORCE" ~ "committee", 
+    ORGANIZATION == "2024 COMMITTEE ON ENERGY & COMMERCE" ~ "committee", 
+    ORGANIZATION == "2024 COMMITTEE ON OVERSIGHT AND ACCOUNTABILITY" ~ "committee", 
+    ORGANIZATION == "2024 HOUSE ADMINISTRATION" ~ "committee",
+    ORGANIZATION == "2024 COMMITTEE ON NATURAL RESOURCES" ~ "committee",
+    ORGANIZATION == "2024 COMMITTEE ON FOREIGN AFFAIRS" ~ "committee", 
+    ORGANIZATION == "2024 COMMITTEE ON JUDICIARY" ~ "committee", 
+    ORGANIZATION == "2024 TRANSPORTATION-INFRASTRUCTURE" ~ "committee", 
+    ORGANIZATION == "2024 COMMITTEE ON RULES" ~ "committee",
+    ORGANIZATION == "2024 COMM ON SCIENCE SPACE&TECH MAJ" ~ "committee",
+    ORGANIZATION == "2024 COMMITTEE ON SMALL BUSINESS" ~ "committee",
+    ORGANIZATION == "2024 COMMITTEE ON ETHICS" ~ "committee", 
+    ORGANIZATION == "2024 TASK FORCE" ~ "committee", 
+    ORGANIZATION == "2024 COMMITTEE ON VETERANS AFFAIRS" ~ "committee", 
+    ORGANIZATION == "2024 COMMITTEE ON WAYS AND MEANS" ~ "committee",
+    ORGANIZATION == "2024 INTELLIGENCE" ~ "committee", 
+    ORGANIZATION == "2024 SELECT COMMITTEE COMPETITION US AND CHINA" ~ "committee", 
+    ORGANIZATION == "2024 HOMELAND SECURITY" ~ "committee",
+    ORGANIZATION == "2024 GENERAL ADMIN - SPEC & SELECT" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 GOVERNMENT CONTRIBUTIONS" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 STATIONERY" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 NET EXP OF EQUIP" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 NET EXPENSES TELECOMMUNICATION" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 SERVICE MANAGEMENT" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 HOUSE CHILD CARE CENTER" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 SUMMER CAMP" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 OFFICE OF ATTENDING PHYSICIAN" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 JOINT COMMMITTEE ON TAXATION" ~ "committee", 
+    ORGANIZATION == "FISCAL YEAR 2025 SUPPLIES AND MATERIALS" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 OFFICIAL MAIL" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 MISCELLANEOUS AUTOMOBILES" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 MISC - RECEPTIONS" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 OFFICE CONGRESSIONAL CONDUCT" ~ "other",
+    ORGANIZATION == "2024 OFFICIAL MAIL" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 BROADCAST SERVICES" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 NETWORK SERVICES-OTHER" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 SALARIES  OFFICERS & EMPLOYEES" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 ADMIN AND OPS" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 COMMUNICATIONS SECURITY" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 COMMUNICATION SERVICES" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 COMMUNICATIONS EQUIPMENT" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 COMMUNICATIONS" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 CAMPUS VOICE NETWORK ENHANCE" ~ "other",
+    ORGANIZATION == "FISCAL YEAR 2025 CDN ENHANCE" ~ "other",
+    TRUE ~ "personal"
+  ))
+
+office_type_percentages <- office_type_summary %>% 
+  group_by(office_type) %>% 
+  summarize(total = sum(YTD_AMOUNT))
+
+view(office_type_percentages)
+
+office_type_percentages <- office_type_percentages %>% 
+  mutate(full_total = sum(total)) %>% 
+  group_by(office_type) %>% 
+  mutate(pct_total = total/full_total * 100)
+
+view(office_type_percentages)
+
+
+
+#House spending by category 
+
+summary_sod %>% 
+  group_by(PROGRAM) %>% 
+  summarize(sum = sum(YTD_AMOUNT)) %>% 
+  arrange(desc(sum))
+
+summary_sod %>% 
+  group_by(DESCRIPTION) %>% 
+  summarize(sum = sum(YTD_AMOUNT)) %>% 
+  arrange(desc(sum))
+
+detail_sod %>% 
+  group_by(SORT_SUBTOTAL_DESCRIPTION) %>% 
+  summarize(n = n(), sum = sum(AMOUNT)) %>% 
+  arrange(desc(sum))
+
+
+```
+
+
+
+
 Note: Something weird happened w my file when I zipped it (wouldn't let me save anymore) so I opened up my r notebook again in a new window and copied things into it. 
 
 
 ```{r}
 detail_sod <- read_csv("detail_sod.csv")
+summary_sod <- read_csv("summary_sod.csv")
 ```
 cleaning/analyzing base data: Fiona
 ```{r}
