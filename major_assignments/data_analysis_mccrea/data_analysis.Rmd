@@ -16,8 +16,7 @@ library(ggrepel)
 
 
 
-Fiona primary
-Question Three: WHAT DID REP'S SPEND THE MOST MONEY ON, ON AVERAGE FOR 2025 FISCAL YEAR AND QUARTER ONE OF 2025 FISCAL YEAR?
+WHAT DID REP'S SPEND THE MOST MONEY ON, ON AVERAGE FOR 2025 FISCAL YEAR AND QUARTER ONE OF 2025 FISCAL YEAR?
   wanted to find the representatives who spent the most money, and what they spent it on
   have to do both yearly and quarterly b/c this expenditure data is meant to be quarter one of 2025 fiscal year, but also have to already have the 2025 yearly expenditure data ready to be continuously updated b/c there is left-over/carried-over expenditures that have been ongoing for a while (sometimes multiple years) or haven't been fully processed yet and thus are applicable to the first quarter of the 2025 fiscal year
   this we searched and found the top individual representative expenditure spender for the yearly data (2024 HON JENNIFFER GONZALEZ-COLON with YTD --> 6593193.78 dollars; Puerto Rico) and the quarterly data (2024 HON. RO KHANNA --> 2278613.82	dollars; CA); did this first with the summary data to get a more comprehensive picture of the rep's spending
@@ -137,7 +136,7 @@ top_qtd_RK |>
 
 
 
-RACHEL: Has House of Reps spending changed since the 2016 Brookings article?
+Has House of Reps spending changed since the 2016 Brookings article?
 
 The 2016 Brookings article (link = "https://www.brookings.edu/articles/a-look-at-spending-in-the-house-of-representatives/") details House of Reps spending for 2015. Among other analyses, they took a look at House spending by office type and House spending by category. By recreating their analysis for the data we have, which covers 2024 and the first quarter of 2025, we can take a look at how House spending has or hasn't changed in the last decade or so. 
 
@@ -641,7 +640,7 @@ grouped_by_reps %>%
 ```
 
 --------------------------------------------------------------------------------------------------------
-MIRA: looking at caucus expenditures 
+WHO SPENT MORE, THE DEMOCRATIC CAUCUS OR THE REPUBLICAN CAUCUS?
 ```{r}
 #looking at expenditures between the House Caucuses in 2024 
 party_caucus <- detail_sod |>
