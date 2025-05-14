@@ -16,13 +16,9 @@ TABLE OF CONTENTS
 - party caucus expenditures lines 373-415 (mira)
 - what did reps spend money on? lines 419-538 (fiona)
 - changes since 2016 lines 541-684 (rachel)
-- office of oversight and reform lines 695-728
-- most newsworthy line 732
-- final memo line 737
-
-
-
-ADD IN TERP AI LINKS, MAKE SURE EVERYTHING IS IN A FOLDER TOGETHER AND LABELED CORRECTLY (names of .csv's match everything we have in here), WE ALL PUSH TO GITHUB, LIFE IS GOOD. 
+- office of oversight and reform lines 695-728 (mira)
+- most newsworthy line 732 (all of us)
+- final memo line 737 (all of us) 
 
 
 
@@ -290,8 +286,8 @@ Summary brief information:
 --------------------------------------------------------------------------------------------------------
 
 QUESTION: HOW DOES SPENDING VARY AMONG REPRESENTATIVES?
-I've got a bar chart of the highest and lowest spending reps, some summary stats, and a very rough draft of a normal distribution graphic. 
-Findings: spending varies significantly among representatives, with some spending well over 6 million and some spending under 500K. Most of the spending was somewhere between 4 and 6 million dollars. The highest spender was apparently the governor of Puerto Rico and the lowest spender was a GOP rep from Wisconsin. 
+I've got a bar chart of the highest and lowest spending reps, some summary stats, and a normal distribution graphic of the findings.
+Findings: spending varies significantly among representatives, with some spending well over 6 million and some spending under 500K. Most of the spending was somewhere between 4 and 6 million dollars. The highest spender was apparently the governor of Puerto Rico and the lowest spender was a GOP rep from Wisconsin. Normal distribution is skewed right. 
 
 ```{r}
 
@@ -383,7 +379,11 @@ grouped_by_reps %>%
 ``` 
 --------------------------------------------------------------------------------------------------------
 
-WHO SPENT MORE, THE DEMOCRATIC CAUCUS OR THE REPUBLICAN CAUCUS?
+QUESTION 2: WHO SPENT MORE, THE DEMOCRATIC CAUCUS OR THE REPUBLICAN CAUCUS?
+
+Basically what I did here was I wanted to look at the spending between the House Caucuses in 2024 (Republican and Democrat). First I made a new dataset with just the rows from the caucuses. Then I looked at the spending based on the category and made a bar chart!I was interested that Democrats spent a lot more than Republicans on personal compensation. Then there's another column called DESCRIPTION which has a more specific description of the expenditures. I put the dataset into OpenRefine to see if it could find any clusters but it failed on me. I then tried asking Chat to do it and it did not.  Overall it's clear that Democrats spent more paying their employees than Republicans, which is super interesting/fascinating/peculiar/I want to know why. 
+
+
 ```{r}
 #looking at expenditures between the House Caucuses in 2024 
 party_caucus <- transactions |>
@@ -396,6 +396,7 @@ party_caucus |>
   arrange(desc(total_spent))
 ```
 ```{r}
+#sorting by organization and what they spent total money on
  party_caucus |>
   group_by(ORGANIZATION, SORT_SUBTOTAL_DESCRIPTION) |>
   summarise(category_spent = sum(AMOUNT, na.rm = TRUE)) |>
@@ -416,7 +417,8 @@ party_caucus |>
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-```{r}
+```{r} 
+#looking at totals 
 party_caucus |>
   group_by(ORGANIZATION, DESCRIPTION) |>
   summarise(count = n(), total_spent = sum(AMOUNT, na.rm = TRUE),.groups = "drop") |>
@@ -425,16 +427,14 @@ party_caucus |>
 write_csv(party_caucus, "party_caucus.csv")
 ```
 
-Basically what I did here was I wanted to look at the spending between the House Caucuses in 2024 (Republican and Democrat). First I made a new dataset with just the rows from the caucuses. Then I looked at the spending based on the category and made a bar chart!I was interested that Democrats spent a lot more than Republicans on personal compensation. Then there's another column called DESCRIPTION which has a more specific description of the expenditures. I put the dataset into OpenRefine to see if it could find any clusters but it failed on me. I then tried asking Chat to do it and it did not. I need to figure out how to group these - it might have to be manually but I will do that for the next assignment. Overall it's clear that Democrats spent more paying their employees than Republicans, which is super interesting/fascinating/peculiar/I want to know why. 
-
 --------------------------------------------------------------------------------------------------------
+QUESTION 3: WHAT DID REP'S SPEND THE MOST MONEY ON, ON AVERAGE FOR 2025 FISCAL YEAR AND QUARTER ONE OF 2025 FISCAL YEAR?
 
-WHAT DID REP'S SPEND THE MOST MONEY ON, ON AVERAGE FOR 2025 FISCAL YEAR AND QUARTER ONE OF 2025 FISCAL YEAR?
   wanted to find the representatives who spent the most money, and what they spent it on
   have to do both yearly and quarterly b/c this expenditure data is meant to be quarter one of 2025 fiscal year, but also have to already have the 2025 yearly expenditure data ready to be continuously updated b/c there is left-over/carried-over expenditures that have been ongoing for a while (sometimes multiple years) or haven't been fully processed yet and thus are applicable to the first quarter of the 2025 fiscal year
   this we searched and found the top individual representative expenditure spender for the yearly data (2024 HON JENNIFFER GONZALEZ-COLON with YTD --> 6593193.78 dollars; Puerto Rico) and the quarterly data (2024 HON. RO KHANNA --> 2278613.82	dollars; CA); did this first with the summary data to get a more comprehensive picture of the rep's spending
   then went on to peruse through the more detailed (well sort of, we know the issue with this data missing a bunch of information, but it has more specifics at least than the summary data) transaction data; did this twice, each time centered around filtering by either yearly rep or quarterly rep
-  findings so far suggest that both, in regard to their top individual expenses, rather than the data that includes total spending thus far, are very centered around spending the most on their individual employees rather than material transactions, or other such transactions. this is not very surprising as this is only quarter one, and there can only be so many projects (or things along those lines) started so far as mostly it is likely things are still in planning stages and have not gotten to financial funding yet; also people do just need to be paid living wages, and it makes sense that these reps pay their teams rather substantial amounts (if this can be called that; depends on perspective)
+  findings suggest that both, in regard to their top individual expenses, rather than the data that includes total spending thus far, are very centered around spending the most on their individual employees rather than material transactions, or other such transactions. this is not very surprising as this is only quarter one, and there can only be so many projects (or things along those lines) started so far as mostly it is likely things are still in planning stages and have not gotten to financial funding yet; also people do just need to be paid living wages, and it makes sense that these reps pay their teams rather substantial amounts (if this can be called that; depends on perspective)
   but what is interesting is that despite all rep's having access to the same types of employees, what can be deduced between these two reps is that they decided (or at least the data is showing they did so far) to pay each employee of the same job description different amounts; basically it is interesting which employee each rep is prioritizing to pay more at this point --> shows beginning insight into what these reps might be paying more attention to, focusing on more, or if there is something they are already working on
   but that is pretty much as far as this data can go due to the already copiously explained issues with this provided data in that it is just so non-descriptive and missing a lot of key/vital information necessary to make better analysis or educated guesses; but! good for head start on great guesses and instigating questions about literally what is going on in the house of reps right now. 
   (made charts for final results so far for each to provide easy visual comprehension tool to see the differences in each rep's choices in employee compensation thus far in the 2025 fiscal year)
@@ -547,16 +547,16 @@ top_qtd_RK |>
 
 ```
 --------------------------------------------------------------------------------------------------------
+QUESTION 4
+HOW HAS HOUSE OF REPS SPENDING CHANGED SINCE 2015?
 
-HOW HAS HOUSE OF REPS SPENDING CHANGED SINCE 2016?
-
-The 2016 Brookings article (link = "https://www.brookings.edu/articles/a-look-at-spending-in-the-house-of-representatives/") details House of Reps spending for 2015. Among other analyses, they took a look at House spending by office type and House spending by category. By recreating their analysis for the data we have, which covers 2024 and the first quarter of 2025, we can take a look at how House spending has or hasn't changed in the last decade or so. 
+The 2016Brookings article (link = "https://www.brookings.edu/articles/a-look-at-spending-in-the-house-of-representatives/") details House of Reps spending for 2015. Among other analyses, they took a look at House spending by office type and House spending by category. By recreating their analysis for the data we have, which covers 2024 and the first quarter of 2025, we can take a look at how House spending has or hasn't changed in the last decade or so. 
 
 Brookings found that over half of House spending was from personal offices. The second-biggest spending chunk came from "other" (which I interpreted as offices like the sergeant at arms, House clerk, etc), followed by committees, and then a small portion of spending came from leadership offices. To recreate their findings for our data, I used case_when to label each office as "leadership," "committee," "other," or "personal." Then, I ran group_by and summarize to get the sum for each type of office, then calculated the percentage each office type was of total spending. 
-I found that spending from personal offices made up about 70% of spending, the vast majority. Next up was committee spending at ~16%, then "other" at ~12%, and finally leadership spending at 2.3%. Looking at the data visualization from Brookings, it seems that personal office spending made up a larger percentage of total spending than it did in 2016, and so did committee spending. Spending from "other" offices/orgs dropped, while leadership spending remained a small percentage of the total. 
+I found that spending from personal offices made up about 70% of spending, the vast majority. Next up was committee spending at ~16%, then "other" at ~12%, and finally leadership spending at 2.3%. Looking at the data visualization from Brookings, it seems that personal office spending made up a larger percentage of total spending than it did in 2015, and so did committee spending. Spending from "other" offices/orgs dropped, while leadership spending remained a small percentage of the total. 
 Brookings's second finding was that "personnel compensation" made up over three-quarters of spending by category. I recreated their analysis to the best of my ability, and got different results for our data. I used group_by and summarize for both our summary .csv and our detail .csv. Grouping by "program" for the summary seemed too vague when I ran that code, so I used "description" next. "Office totals" equaled $1.1 billion (an increase from Brookings's conclusion that total House spending equaled 1.05b in 2015, excluding member salaries), and the highest spending was in the Personnel Compensation category. That's similar to Brookings's finding that compensation was the highest spending category. 
 I ran similar code for our detail .csv, and got different results. In this dataset, "equipment" was the highest spending category (over 712 million dollars) and compensation was the second-highest (640 million). 
-It's hard to come to a conclusion on how this stacks up to Brookings's findings because our two datasets (summary and detail) are telling us different things, but personnel compensation was still the highest or second-highest spending category in 2024-2025. That's similar to 2016 spending in the House. 
+It's hard to come to a conclusion on how this stacks up to Brookings's findings because our two datasets (summary and detail) are telling us different things, but personnel compensation was still the highest or second-highest spending category in 2024-2025. That's similar to 2015 spending in the House. 
 
 ```{r}
 
@@ -693,6 +693,7 @@ transactions %>%
 ```
 --------------------------------------------------------------------------------------------------------
 QUESTION 5: HOW DID SPENDING FOR THE OFFICE OF OVERSIGHT AND ACCOUNTABILITY/REFORM CHANGE IN RECENT YEARS? 
+
 Mira noticed some interesting stuff with the Office of Oversight and Accountability and decided to look into it because our data wasn't well equipped to look into our original fifth question. We wanted to see how spending changed for that office over just two years. We started by reading in 2022 data and then joining it with the 2024 transactions data, then doing some calculations for change between the two. 
 
 This code found a huge change in personnel compensation totals for this office. According to this dataset, it grew by over 3.7 million dollars between 2022 and 2024. That speaks to either the transaction data being messed up for all years, not just 2024/5, or a massive change in spending that might include hiring more people. This could be newsworthy for a couple of reasons: either spending increased dramatically and we'd have to find out why, or the House has been keeping faulty and incomplete transaction data for multiple years. Whichever it is, it would be worth digging into. 
@@ -703,6 +704,7 @@ transactions <- transactions |>
 ```
 
 ```{r}
+#looking for expenditure differences between years 
 detail_22_sod <- read_csv("transactions_2022.csv") |>
   clean_names()
 
@@ -716,6 +718,7 @@ accountability_24 <- transactions %>%
   group_by(organization, sort_subtotal_description, description, amount, fisca_or_legislative_year) %>% 
   summarize(count = n(), total_spent = sum(amount, na.rm = TRUE), .groups = "drop") 
 
+#joining 2022 and 2024 data and calculating change in spending
 joined <- accountability_22 |>
   left_join(accountability_24, join_by("description" =="description")) %>% 
   select(organization.x, organization.y, description, sort_subtotal_description.x, sort_subtotal_description.y, amount.x, amount.y) |>
@@ -730,13 +733,13 @@ joined <- accountability_22 |>
 
 -----------------------------------------MOST INTERESTING FINDING?-------------------------------------
 
-Out of all of our cleaning and data analysis of House of Representative Expenditure Data so far for this project, the most newsworthy findings thus far have been our findings for question four: Has the House of Representatives spending changed since the 2016 Brookings article? What stuck out to us the most in these findings was not only the fact that it covered roughly the span of ten years worth of expenditure data --in the sense that we could track ten years worth of changed (or not changed) priorities in regard to federal spendings-- but also what the federal expenditure data is specifically continuously (or not continuously) lacking in regard to their data record keeping abilities. So far, among all of our questions we've noticed a strong continued trend of poor record keeping which has severely limited our ability to properly analyze the House of Representative expenditures. However, this is also a limited boon as it has increased the amount of questions we originally had (as in the more we dig in, the more questions we have about why the data is missing). Pertaining to this question, what we found follows the trend we've noticed throughout all the data in that the most notable differences in expenditure data over the years is in regard to personal compensation, 'other' (due to lack of provided data), and personal office spending. We found that in each of these categories, spending increased by large amounts from 2016 to 2024/5. We’d like to know more about why spending increased, whether it outpaced inflation, and why different spending categories made up different percentages in 2016 versus 2024/5. 
+Out of all of our cleaning and data analysis of House of Representative Expenditure Data so far for this project, the most newsworthy findings thus far have been our findings for question four: Has the House of Representatives spending changed since the 2016 Brookings article? What stuck out to us the most in these findings was not only the fact that it covered roughly the span of ten years worth of expenditure data --in the sense that we could track ten years worth of changed (or not changed) priorities in regard to federal spendings-- but also what the federal expenditure data is specifically continuously (or not continuously) lacking in regard to their data record keeping abilities. So far, among all of our questions we've noticed a strong continued trend of poor record keeping which has severely limited our ability to properly analyze the House of Representative expenditures. However, this is also a limited boon as it has increased the amount of questions we originally had (as in the more we dig in, the more questions we have about why the data is missing). Pertaining to this question, what we found follows the trend we've noticed throughout all the data in that the most notable differences in expenditure data over the years is in regard to personal compensation, 'other' (due to lack of provided data), and personal office spending. We found that in each of these categories, spending increased by large amounts from 2015 to 2024/5. We’d like to know more about why spending increased, whether it outpaced inflation, and why different spending categories made up different percentages in 2015 versus 2024/5. 
 
 
 -----------------------------------FINAL MEMO-----------------------------------------------------------
 
 There’s a massive difference in spending between the U.S. Representatives equating to millions of dollars. Specifically, personnel compensation is vastly different for the staff of each representative included in the data. This is newsworthy because of the spending disparities and what they mean for constituents. Each representative is paying their staff different amounts for their quarterly and yearly salaries, according to Fiona’s analysis of summary data. And while federal regulations set minimum and maximum salaries, there is enough variation to be of significant interest. Are two people doing the same job, but receiving different salaries because they work in different states? What do state regulations have to do with congressional spending? Where is this money coming from? 
-Personnel compensation appeared consistently during analysis. We looked at how spending varied and found that most offices spent between 4 - 6 million (already a wide gap), but other offices were spending a fraction of that. We also looked at how spending varied among the Democratic and Republican caucuses, and how House spending changed between 2016 - 2024/5. We also found that personnel compensation increased for the Office of Oversight and Reform/Accountability between 2022 - 2024. We’d look into Oversight spending, and whether the change in spending between 2016-2024/5 correlated with inflation.
+Personnel compensation appeared consistently during analysis. We looked at how spending varied and found that most offices spent between 4 - 6 million (already a wide gap), but other offices were spending a fraction of that. We also looked at how spending varied among the Democratic and Republican caucuses, and how House spending changed between 2015 - 2024/5. We also found that personnel compensation increased for the Office of Oversight and Reform/Accountability between 2022 - 2024. We’d look into Oversight spending, and whether the change in spending between 2015-2024/5 correlated with inflation.
 These findings are new, but we were working with both current and old data. There is potential for a local angle by examining Maryland expenditures, but we are more focused on a national comparison to answer our questions. 
 For pros and cons, the summary data was well done. The data included representatives, caucuses, and other offices and employees. The structure made it easy to analyze using the tools we learned in class. However, the more detailed transaction data was extremely flawed, with significant missing data, and we are unsure if our analysis results are correct. The flaws in the data did bring up more questions to explore —why was it so incomplete? What does that mean for government record keeping?— but our analysis is limited without a complete dataset. 
 Firstly, we’d seek verification from whoever manages digital records for the House, and ask about the missing data. If they have other records to fill in those gaps, we’d want them. We’d also verify our findings with them. Next, we’d speak to individual representatives about their spending, especially those spending the most/least. We’d ask about their staff salaries, why each state appears to be spending differently on staff members of the same positions across the country, and what that might mean for representative priorities and/or state priorities. Also, we’d ask where their money is coming from for personnel compensation.
