@@ -9,8 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-FINAL DATA ANALYSIS RMD 
-
 TABLE OF CONTENTS 
 - loading packages 
 - data cleaning lines 30-271 (fiona)
@@ -18,7 +16,10 @@ TABLE OF CONTENTS
 - party caucus expenditures lines 373-415 (mira)
 - what did reps spend money on? lines 419-538 (fiona)
 - changes since 2016 lines 541-684 (rachel)
-- MIRA IM SO SORRY I FORGOT WHAT QUESTION YOU WERE TRYING TO ANSWER lines 687-706 (mira)
+- office of oversight and reform lines 695-728
+- most newsworthy line 732
+- final memo line 737
+
 
 
 ADD IN TERP AI LINKS, MAKE SURE EVERYTHING IS IN A FOLDER TOGETHER AND LABELED CORRECTLY (names of .csv's match everything we have in here), WE ALL PUSH TO GITHUB, LIFE IS GOOD. 
@@ -34,6 +35,14 @@ library(janitor)
 library(ggplot2)
 library(ggrepel)
 ```
+
+LOADING DATA 
+
+```{r}
+summary <- read_csv("summary.csv")
+transactions <- read_csv("transactions.csv")
+```
+
 
 ---cleaning transaction data---
 
@@ -288,7 +297,7 @@ Findings: spending varies significantly among representatives, with some spendin
 
 #READING IN THE DATA, GROUP_BY AND SUMMARIZE
 
-summary_sod <- read_csv("summary_sod.csv")
+summary_sod <- read_csv("summary.csv")
 
 grouped_by_org <- summary_sod %>% 
   group_by(ORGANIZATION) %>% 
@@ -338,10 +347,10 @@ highest_lowest_spenders %>%
 
 #SUMMARY STATS FOR ALL THE REPS 
 
-#went into excel, deleted everything that wasn't a rep's office, including leadership offices. i feel like their budgets might be huge, but we can come back and look at that once we look at normal members of the house.
-#ended up making a new excel spreadsheet because the old one had a bunch of empty rows at the bottom when I read it back in. 
+#went into excel, deleted everything that wasn't a rep's office, including leadership offices bc I feel like their budgets might skew things. 
+
 write_csv(grouped_by_org, file = "grouped_by_org.csv")
-grouped_by_reps <- read_csv("grouped_by_reps.csv")
+grouped_by_reps <- read_csv("grouped_by_reps.csv") #new one!
 
 grouped_by_reps %>% 
   summarize(mean = mean(sum), median = median(sum), max = max(sum), min = min(sum), sd = sd(sum))
@@ -377,7 +386,7 @@ grouped_by_reps %>%
 WHO SPENT MORE, THE DEMOCRATIC CAUCUS OR THE REPUBLICAN CAUCUS?
 ```{r}
 #looking at expenditures between the House Caucuses in 2024 
-party_caucus <- detail_sod |>
+party_caucus <- transactions |>
   filter(ORGANIZATION %in% c("2024 DEMOCRATIC CAUCUS", "2024 REPUBLICAN CONFERENCE"))
 
 #spending between the caucuses
@@ -433,7 +442,7 @@ WHAT DID REP'S SPEND THE MOST MONEY ON, ON AVERAGE FOR 2025 FISCAL YEAR AND QUAR
 ```{r}
 
 ##searching for the rep that spent the most money through summary first; going through year data first##
-top_rep_spend_sum_ytd <- summary_sod |>
+top_rep_spend_sum_ytd <- summary |>
   group_by(ORGANIZATION) |>
   summarise(
     total_spent_yearly = sum(YTD_AMOUNT)
@@ -446,7 +455,7 @@ top_rep_spend_sum_ytd
 ##looked it up; she is gov. Puerto Rico rn, but was rep in 2024##
 
 ##searching for the rep that spent the most money through summary first; going through quarter data to see if there is a difference in results##
-top_rep_spend_sum_qtd <- summary_sod |>
+top_rep_spend_sum_qtd <- summary |>
   group_by(ORGANIZATION) |>
   summarise(
     total_spent_quarterly = sum(QTD_AMOUNT)
@@ -462,7 +471,7 @@ top_rep_spend_sum_qtd
 
 ```{r}
 ##now going to transaction dataframe to search for all expenditure data pertaining to the top spender between the yearly and quarterly to analyze what, exactly, it is they are spending the most money on##
-top_ytd_JGC <- detail_sod |>
+top_ytd_JGC <- transactions |>
   filter(ORGANIZATION == "2024 HON. JENNIFFER GONZALEZ-COLON") |>
   arrange(desc(AMOUNT))
 
@@ -499,7 +508,7 @@ top_ytd_JGC |>
 
 ```{r}
 ##now going to transaction dataframe to search for all expenditure data pertaining to the top spender between the yearly and quarterly to analyze what, exactly, it is they are spending the most money on##
-top_qtd_RK <- detail_sod |>
+top_qtd_RK <- transactions |>
   filter(ORGANIZATION == "2024 HON. RO KHANNA") |>
   arrange(desc(AMOUNT))
 
@@ -551,8 +560,8 @@ It's hard to come to a conclusion on how this stacks up to Brookings's findings 
 
 ```{r}
 
-summary_sod <- read_csv("summary_sod.csv")
-detail_sod <- read_csv("detail_sod.csv")
+summary <- read_csv("summary.csv")
+transactions <- read_csv("transactions.csv")
 
 
 #house spending by office type 
@@ -665,17 +674,17 @@ view(office_type_percentages)
 
 #House spending by category 
 
-summary_sod %>% 
+summary %>% 
   group_by(PROGRAM) %>% 
   summarize(sum = sum(YTD_AMOUNT)) %>% 
   arrange(desc(sum))
 
-summary_sod %>% 
+summary %>% 
   group_by(DESCRIPTION) %>% 
   summarize(sum = sum(YTD_AMOUNT)) %>% 
   arrange(desc(sum))
 
-detail_sod %>% 
+transactions %>% 
   group_by(SORT_SUBTOTAL_DESCRIPTION) %>% 
   summarize(n = n(), sum = sum(AMOUNT)) %>% 
   arrange(desc(sum))
@@ -683,12 +692,18 @@ detail_sod %>%
 
 ```
 --------------------------------------------------------------------------------------------------------
+QUESTION 5: HOW DID SPENDING FOR THE OFFICE OF OVERSIGHT AND ACCOUNTABILITY/REFORM CHANGE IN RECENT YEARS? 
+Mira noticed some interesting stuff with the Office of Oversight and Accountability and decided to look into it because our data wasn't well equipped to look into our original fifth question. We wanted to see how spending changed for that office over just two years. We started by reading in 2022 data and then joining it with the 2024 transactions data, then doing some calculations for change between the two. 
 
-Mira: 
-detail_sod <- detail_sod |>
-  clean_names() 
+This code found a huge change in personnel compensation totals for this office. According to this dataset, it grew by over 3.7 million dollars between 2022 and 2024. That speaks to either the transaction data being messed up for all years, not just 2024/5, or a massive change in spending that might include hiring more people. This could be newsworthy for a couple of reasons: either spending increased dramatically and we'd have to find out why, or the House has been keeping faulty and incomplete transaction data for multiple years. Whichever it is, it would be worth digging into. 
+
 ```{r}
-detail_22_sod <- read_csv("data/OCT-DEC-2022-SOD-DETAIL-GRID-FINAL.csv") |>
+transactions <- transactions |>
+  clean_names() 
+```
+
+```{r}
+detail_22_sod <- read_csv("transactions_2022.csv") |>
   clean_names()
 
 accountability_22 <- detail_22_sod |>
@@ -696,11 +711,34 @@ accountability_22 <- detail_22_sod |>
   group_by(organization, sort_subtotal_description, description, amount, fiscal_year_or_legislative_year) |>
   summarise(count = n(), total_spent = sum(amount, na.rm = TRUE), .groups = "drop") 
 
-joined <- accountability |>
-  left_join(accountability_22, by = c("description" = "description")) |>
+accountability_24 <- transactions %>% 
+  filter(organization == "2024 COMMITTEE ON OVERSIGHT AND ACCOUNTABILITY") %>% 
+  group_by(organization, sort_subtotal_description, description, amount, fisca_or_legislative_year) %>% 
+  summarize(count = n(), total_spent = sum(amount, na.rm = TRUE), .groups = "drop") 
+
+joined <- accountability_22 |>
+  left_join(accountability_24, join_by("description" =="description")) %>% 
   select(organization.x, organization.y, description, sort_subtotal_description.x, sort_subtotal_description.y, amount.x, amount.y) |>
   rename(amount_2024 = amount.x, amount_2022 = amount.y) |>
   mutate(difference = amount_2024 - amount_2022) |>
   arrange(desc(difference))
+
+#personnel compensation change is on the second line of the dataset. Personnel compensation grew  $3766143.50 between 2022 and 2024 for oversight and accountability office.
+
 ```
---------------------------------------------------------------------------------------------------------
+
+
+-----------------------------------------MOST INTERESTING FINDING?-------------------------------------
+
+Out of all of our cleaning and data analysis of House of Representative Expenditure Data so far for this project, the most newsworthy findings thus far have been our findings for question four: Has the House of Representatives spending changed since the 2016 Brookings article? What stuck out to us the most in these findings was not only the fact that it covered roughly the span of ten years worth of expenditure data --in the sense that we could track ten years worth of changed (or not changed) priorities in regard to federal spendings-- but also what the federal expenditure data is specifically continuously (or not continuously) lacking in regard to their data record keeping abilities. So far, among all of our questions we've noticed a strong continued trend of poor record keeping which has severely limited our ability to properly analyze the House of Representative expenditures. However, this is also a limited boon as it has increased the amount of questions we originally had (as in the more we dig in, the more questions we have about why the data is missing). Pertaining to this question, what we found follows the trend we've noticed throughout all the data in that the most notable differences in expenditure data over the years is in regard to personal compensation, 'other' (due to lack of provided data), and personal office spending. We found that in each of these categories, spending increased by large amounts from 2016 to 2024/5. We’d like to know more about why spending increased, whether it outpaced inflation, and why different spending categories made up different percentages in 2016 versus 2024/5. 
+
+
+-----------------------------------FINAL MEMO-----------------------------------------------------------
+
+There’s a massive difference in spending between the U.S. Representatives equating to millions of dollars. Specifically, personnel compensation is vastly different for the staff of each representative included in the data. This is newsworthy because of the spending disparities and what they mean for constituents. Each representative is paying their staff different amounts for their quarterly and yearly salaries, according to Fiona’s analysis of summary data. And while federal regulations set minimum and maximum salaries, there is enough variation to be of significant interest. Are two people doing the same job, but receiving different salaries because they work in different states? What do state regulations have to do with congressional spending? Where is this money coming from? 
+Personnel compensation appeared consistently during analysis. We looked at how spending varied and found that most offices spent between 4 - 6 million (already a wide gap), but other offices were spending a fraction of that. We also looked at how spending varied among the Democratic and Republican caucuses, and how House spending changed between 2016 - 2024/5. We also found that personnel compensation increased for the Office of Oversight and Reform/Accountability between 2022 - 2024. We’d look into Oversight spending, and whether the change in spending between 2016-2024/5 correlated with inflation.
+These findings are new, but we were working with both current and old data. There is potential for a local angle by examining Maryland expenditures, but we are more focused on a national comparison to answer our questions. 
+For pros and cons, the summary data was well done. The data included representatives, caucuses, and other offices and employees. The structure made it easy to analyze using the tools we learned in class. However, the more detailed transaction data was extremely flawed, with significant missing data, and we are unsure if our analysis results are correct. The flaws in the data did bring up more questions to explore —why was it so incomplete? What does that mean for government record keeping?— but our analysis is limited without a complete dataset. 
+Firstly, we’d seek verification from whoever manages digital records for the House, and ask about the missing data. If they have other records to fill in those gaps, we’d want them. We’d also verify our findings with them. Next, we’d speak to individual representatives about their spending, especially those spending the most/least. We’d ask about their staff salaries, why each state appears to be spending differently on staff members of the same positions across the country, and what that might mean for representative priorities and/or state priorities. Also, we’d ask where their money is coming from for personnel compensation.
+To begin we would clarify analysis verification: reaching out to House comms to see who we can talk to about the data discrepancies. Next, we’d reach out to the top five and bottom five spenders in the House. We’d also look for a political science data analyst for an academic perspective. We’d travel to wherever these spending records are physically stored, and to the offices of representatives if we’re able. 
+
